@@ -14,7 +14,7 @@ Voice::Voice()
 
 	o1->set_waveform(0);
 	o2->set_waveform(1);
-	osc1_divider = 8;
+	osc1_divider = 1000;
 	osc2_divider = 2;
 	osc1_semitones=0;
 	osc2_semitones=12;

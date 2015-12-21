@@ -15,7 +15,7 @@
 #define N_NOTES 88
 #define SINE_SAMPLES 16384
 #define SINE_SAMPLES_4 4096
-#define FRAMES_BUFFER 1024 //256
+#define FRAMES_BUFFER 256
 
 
 

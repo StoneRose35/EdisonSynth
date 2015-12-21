@@ -32,76 +32,6 @@ double getFrequency(int notenumber)
 
 
 
-// vollkommen bandlimitierte Synthese, da wird aus einer hinterlegten
-// sinuswelle alles zusammengeflickt
-/*
-void generate_sound2(snd_pcm_hw_params_t *params,snd_pcm_t *handle)
-{
-	int dir;
-	int rc;
-	snd_pcm_uframes_t frames;
-	unsigned int val;
-	ofstream wave;
-    //wave.open("wave.txt");
-	snd_pcm_hw_params_get_period_size(params, &frames,
-		  	                                        &dir);
-
-	cout << "frames: " << frames << endl;
-     We want to loop for 5 seconds
-    snd_pcm_hw_params_get_period_time(params,
-									&val, &dir);
-
-    cout << " the period time is " << val << " (probably) microseconds"<<endl;
-
-    char *buffer;
-    int size = frames * 4;  2 bytes/sample, 2 channels
-      buffer = (char *) malloc(size);
-  	int note =22;
-    double f=getFrequency(note-48);
-
-    short sample_val;
-
-    Oscillator o1;
-    o1.set_f(f);
-    o1.set_waveform(0);
-    o1.recalc_coeffs(1.0);
-    for(int z=0;z<5000;z++)
-    {
-  	  for(unsigned int j=0;j<size;j+=4)
-  	  {
-    	sample_val=o1.get_nextval();
-		*(buffer + j + 0) = sample_val & 0xff;
-		*(buffer + j + 1) = (sample_val >> 8) & 0xff;
-		*(buffer + j + 2) = sample_val & 0xff;
-		*(buffer + j + 3) = (sample_val >> 8) & 0xff;
-  	  }
-  	  //cout << " integer phase: " << intphase << ", table value: " << *(sinewave + intphase) << endl;
-	  //cout << " s val: " << sample_val << endl;
-  	  //wave << sample_val << endl;
-  	  rc = snd_pcm_writei(handle, buffer, frames);
-  		  if(rc==-EPIPE)
-		  {
-			  cout << "der Puffer ist leergelaufen" << endl;
-		  }
-		  else if (rc < 0)
-		  {
-			  cout << " error from writei " << snd_strerror(rc) << endl;
-		  }
-		  else if(rc !=(int)frames)
-		  {
-			  cout << "not enough samples written" << endl;
-		  }
-
-    }
-    snd_pcm_drain(handle);
-    snd_pcm_close(handle);
-    free(buffer);
-    //wave.close();
-}
-*/
-
-
-
 
 
 void sine_wavetable_reader()
@@ -208,7 +138,7 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  double t_total=0.0;
 	  double t_total_old=0.0;
 	  voc=new Voice();
-	  rc=snd_pcm_open(&handle,"plughw:1,0",SND_PCM_STREAM_PLAYBACK,0); // plughw:0,0 would be the internal sound card
+	  rc=snd_pcm_open(&handle,"plughw:0,0",SND_PCM_STREAM_PLAYBACK,0); // plughw:0,0 would be the internal sound card
 	  printIfError(rc);
 
 	  snd_pcm_hw_params_alloca(&params);
@@ -276,8 +206,10 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  	  }
 
 
-	  	  voc->set_note(24);
+	  	  voc->set_note(14);
 	  	  voc->set_on_off(1);
+	  	  voc->o2->set_resonance(-1.98);
+	  	  voc->o2->set_symm(0.01);
 	  	  while(1)
 	  	  {
 	  		rc = snd_pcm_wait (handle, 1000);
@@ -320,8 +252,9 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 				t_total_old=t_total;
 				cout << "should update note " << endl;
 			}*/
-			voc->o1->set_symm(0.45*sin(t_total/0.6)+0.5);
-			voc->o2->set_symm(0.45*cos(t_total/0.8)+0.5);
+			voc->o2->set_fcutoff(5000+sin(t_total/0.2)*4900);
+			//voc->o1->set_symm(0.45*sin(t_total/0.6)+0.5);
+			//voc->o2->set_symm(0.45*cos(t_total/0.8)+0.5);
 			voc->update(delta_t);
 	  	  }
 

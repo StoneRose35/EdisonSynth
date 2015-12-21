@@ -32,6 +32,8 @@ Oscillator::Oscillator()
 	current_phase=0;
 	current_frequency=0;
 	current_symm=1.0;
+	f_cutoff=20000;
+	resonance=0;
 
 	ifstream wt_in;
 	wt_in.open("sine.tab",ios::binary|ios::in);
@@ -45,23 +47,39 @@ Oscillator::Oscillator()
 
 }
 
+void Oscillator::set_fcutoff(double fc)
+{
+	f_cutoff = fc;
+}
+
+void Oscillator::set_resonance(double k)
+{
+	resonance=k;
+}
+
 void Oscillator::recalc_coeffs()
 {
 	short* coeffs2;
 	short* harm_killer;
 	double raw_val;
+	double f_harm;
+	double q;
+	double filter_coeff;
 	coeffs2=new short[512];
 	for(int ii=0;ii<512;ii++)
 	{
+		f_harm=current_frequency*ii;
+		q=(1.0+(f_harm/f_cutoff)*(f_harm/f_cutoff));
+		filter_coeff = 1.0/sqrt(q*q*q*q + resonance*resonance -2*resonance*q*q*cos(4*atan(f_harm/f_cutoff)));
 		if(waveform==0)
 		{
 			if(ii==0)
 			{
-				raw_val = (1.0/((current_symm/2.0-0.5)*2.0));
+				raw_val = (1.0/(((current_symm/2.0-0.5)*2.0)*filter_coeff));
 			}
 			else
 			{
-				raw_val = (1.0/(4.0/M_PI*sin(M_PI*(double)ii*current_symm/2.0)/(double)ii));
+				raw_val = (1.0/((4.0/M_PI*sin(M_PI*(double)ii*current_symm/2.0)/(double)ii))*filter_coeff);
 			}
 		}
 		else
@@ -72,7 +90,7 @@ void Oscillator::recalc_coeffs()
 			}
 			else
 			{
-				raw_val = (1.0/(-2.0*(pow(-1.0,(double)ii)*pow(2.0/current_symm,2.0))/((double)ii*(double)ii*(2.0/current_symm-1.0)*M_PI*M_PI)*sin(((double)ii*(2.0/current_symm-1.0)*M_PI)/(2.0/current_symm))));
+				raw_val = (1.0/((-2.0*(pow(-1.0,(double)ii)*pow(2.0/current_symm,2.0))/((double)ii*(double)ii*(2.0/current_symm-1.0)*M_PI*M_PI)*sin(((double)ii*(2.0/current_symm-1.0)*M_PI)/(2.0/current_symm)))*filter_coeff));
 			}
 		}
 		if(isinf(raw_val))

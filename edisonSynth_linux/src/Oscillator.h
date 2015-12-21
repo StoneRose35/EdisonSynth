@@ -18,6 +18,8 @@ class Oscillator
 	double d_phase;
 	double current_symm; // symm goes from 1 (symmetric) to 0.01 (asymmetric)
 	int waveform; //0: square, 1: triangle/sawtooth
+	double f_cutoff;
+	double resonance; // goes from 0 to -2
 public:
 	Oscillator();
 	short get_nextval();
@@ -27,6 +29,8 @@ public:
 	void set_f(double f);
 	void set_symm(double s);
 	void recalc_coeffs();
+	void set_fcutoff(double fc);
+	void set_resonance(double k);
 };
 
 
