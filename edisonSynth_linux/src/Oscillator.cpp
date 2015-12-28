@@ -71,7 +71,7 @@ void Oscillator::recalc_coeffs()
 		f_harm=current_frequency*ii;
 		q=(1.0+(f_harm/f_cutoff)*(f_harm/f_cutoff));
 		filter_coeff = 1.0/sqrt(q*q*q*q + resonance*resonance -2*resonance*q*q*cos(4*atan(f_harm/f_cutoff)));
-		if(waveform==0)
+		if(waveform==0) // square wave
 		{
 			if(ii==0)
 			{
@@ -103,7 +103,7 @@ void Oscillator::recalc_coeffs()
 		}
 		else
 		{
-			*(coeffs2+ii)=(short)round(raw_val*2.0);
+			*(coeffs2+ii)=(short)round(raw_val);
 		}
 		//cout << "raw val is: " << raw_val << endl;
 		//cout << "abs(raw val) is: " << fabs(raw_val) << endl;

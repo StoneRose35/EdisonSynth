@@ -25,11 +25,6 @@ snd_pcm_hw_params_t *params;
 snd_pcm_sw_params_t *sw_params;
 Voice* voc;
 
-double getFrequency(int notenumber)
-{
-	return 440.0*pow(pow(2.0,1.0/12.0),(double)notenumber);
-}
-
 
 
 
@@ -205,11 +200,17 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  	      cout << "Init: cannot prepare audio interface for use (" << snd_strerror (rc) << ")" << endl;
 	  	  }
 
-
-	  	  voc->set_note(14);
-	  	  voc->set_on_off(1);
+	  	  char note=14;
+	  	  voc->set_note((int)note);
+	  	  voc->set_on_off(0);
+	  	  voc->o2->set_fcutoff(2600);
 	  	  voc->o2->set_resonance(-1.98);
 	  	  voc->o2->set_symm(0.01);
+	  	  voc->env_vol->setAttack(145);
+	  	  voc->env_vol->setDecay(123);
+	  	  voc->env_vol->setSustain(0.8);
+	  	  voc->env_vol->setRelease(543);
+	  	  char note_toggle=0;
 	  	  while(1)
 	  	  {
 	  		rc = snd_pcm_wait (handle, 1000);
@@ -252,10 +253,28 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 				t_total_old=t_total;
 				cout << "should update note " << endl;
 			}*/
-			voc->o2->set_fcutoff(5000+sin(t_total/0.2)*4900);
+			if(t_total-t_total_old > 2.4)
+			{
+				t_total_old=t_total;
+				if(note_toggle==0)
+				{
+					note_toggle=1;
+					note++;
+					voc->set_note((int)note);
+					cout << "switching on " << endl;
+				}
+				else
+				{
+					note_toggle=0;
+					cout  << "switching off " << endl;
+				}
+				voc->set_on_off(note_toggle);
+				//voc->o2->set_fcutoff(5000+sin(t_total/0.2)*4900);
+			}
+
 			//voc->o1->set_symm(0.45*sin(t_total/0.6)+0.5);
 			//voc->o2->set_symm(0.45*cos(t_total/0.8)+0.5);
-			voc->update(delta_t);
+			voc->update(delta_t*1000.0);
 	  	  }
 
 	  	  //generate_sound2(params,handle);

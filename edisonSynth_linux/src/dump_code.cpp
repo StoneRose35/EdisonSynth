@@ -47,7 +47,7 @@ void generate_sound(snd_pcm_hw_params_t *params,snd_pcm_t *handle)
     int size = frames * 4; /* 2 bytes/sample, 2 channels */
       buffer = (char *) malloc(size);
 	int note =22;
-		      double f=getFrequency(note-48);
+		      double f=223; //getFrequency(note-48);
 		      double d_phase = (double)SAMPLE_SIZE*f/(double)SAMPLING_RATE;
 		      cout << " frequency is: " << f << " delta phase is: " << d_phase << endl;
 		      double phase_d=0;
