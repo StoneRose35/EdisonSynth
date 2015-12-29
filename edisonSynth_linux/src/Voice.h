@@ -7,9 +7,12 @@
 
 #include "Oscillator.h"
 #include "Envelope.h"
+#include "LFO.h"
 
 #ifndef VOICE_H_
 #define VOICE_H_
+
+#define TWO_TWROOT 1.059463094359295310
 
 class Voice
 {
@@ -20,11 +23,18 @@ private:
 	short osc2_divider;
 	short osc1_semitones;
 	short osc2_semitones;
-	short env_divider;
+	short env_divider1;
+	short env_divider2;
+	char param_set_active; // either 1 or 2
+	int interp_cntr;
+	int samples_to_interpolate;
 public:
 	Oscillator* o1;
 	Oscillator* o2;
 	Envelope* env_vol;
+	Envelope* env_div;
+	LFO* lfo1;
+	LFO* lfo2;
 	Voice();
 	void set_note(int note);
 	short get_nextval();

@@ -206,10 +206,15 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  	  voc->o2->set_fcutoff(2600);
 	  	  voc->o2->set_resonance(-1.98);
 	  	  voc->o2->set_symm(0.01);
-	  	  voc->env_vol->setAttack(145);
-	  	  voc->env_vol->setDecay(123);
-	  	  voc->env_vol->setSustain(0.8);
-	  	  voc->env_vol->setRelease(543);
+	  	  voc->env_vol->setAttack(420);
+	  	  voc->env_vol->setDecay(1);
+	  	  voc->env_vol->setSustain(1.0);
+	  	  voc->env_vol->setRelease(420);
+	  	  voc->env_div->setAttack(220);
+	  	  voc->env_div->setDecay(45);
+	  	  voc->env_div->setSustain(0.8);
+	  	  voc->env_div->setRelease(420);
+	  	  voc->lfo1->set_frequency(1.23);
 	  	  char note_toggle=0;
 	  	  while(1)
 	  	  {
@@ -253,7 +258,7 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 				t_total_old=t_total;
 				cout << "should update note " << endl;
 			}*/
-			if(t_total-t_total_old > 2.4)
+			if(t_total-t_total_old > 0.67)
 			{
 				t_total_old=t_total;
 				if(note_toggle==0)
@@ -274,7 +279,7 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 
 			//voc->o1->set_symm(0.45*sin(t_total/0.6)+0.5);
 			//voc->o2->set_symm(0.45*cos(t_total/0.8)+0.5);
-			voc->update(delta_t*1000.0);
+			voc->update(delta_t);
 	  	  }
 
 	  	  //generate_sound2(params,handle);

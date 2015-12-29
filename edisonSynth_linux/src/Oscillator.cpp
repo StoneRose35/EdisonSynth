@@ -28,7 +28,10 @@ void Oscillator::set_waveform(int wf)
 Oscillator::Oscillator()
 {
 	sinewaves = new short[SINE_SAMPLES];
-	harm_coeffs=new short[512];
+	harm_coeffs1=new short[512];
+	harm_coeffs2=new short[512];
+	samples_to_interpolate=FRAMES_BUFFER;
+	interp_cntr=0;
 	current_phase=0;
 	current_frequency=0;
 	current_symm=1.0;
@@ -49,7 +52,18 @@ Oscillator::Oscillator()
 
 void Oscillator::set_fcutoff(double fc)
 {
-	f_cutoff = fc;
+	if(fc<20)
+	{
+		f_cutoff=20;
+	}
+	else if(fc > 20000)
+	{
+		f_cutoff=20000;
+	}
+	else
+	{
+		f_cutoff = fc;
+	}
 }
 
 void Oscillator::set_resonance(double k)
@@ -57,7 +71,7 @@ void Oscillator::set_resonance(double k)
 	resonance=k;
 }
 
-void Oscillator::recalc_coeffs()
+void Oscillator::recalc_coeffs(int nsamples)
 {
 	short* coeffs2;
 	short* harm_killer;
@@ -109,8 +123,21 @@ void Oscillator::recalc_coeffs()
 		//cout << "abs(raw val) is: " << fabs(raw_val) << endl;
 		//cout << " coefficient #" << ii << " :" << *(coeffs2+ii) << endl;
 	}
-	harm_killer=harm_coeffs;
-	harm_coeffs=coeffs2;
+	if(coeffs_active==1)
+	{
+		// set coefficients 2
+		harm_killer=harm_coeffs2;
+		harm_coeffs2=coeffs2;
+		coeffs_active=2;
+	}
+	else
+	{
+		harm_killer=harm_coeffs1;
+		harm_coeffs1=coeffs2;
+		coeffs_active=1;
+	}
+	samples_to_interpolate=nsamples;
+	interp_cntr=0;
 	delete harm_killer;
 }
 void Oscillator::set_symm(double s)
@@ -125,6 +152,8 @@ short Oscillator::get_nextval()
 	int intphase;
 	double harm_phase;
 	short sample_val=0;
+	short harm_coeff;
+
 	if(waveform==1)
 	{
 		harm_phase=current_phase;
@@ -137,13 +166,29 @@ short Oscillator::get_nextval()
 	{
 		harm_phase -= (double)SINE_SAMPLES;
 	}
-	sample_val+=32767/harm_coeffs[0];
+	if(coeffs_active==1)
+	{
+		harm_coeff=harm_coeffs1[0] + (harm_coeffs2[0] - harm_coeffs2[0])*((double)interp_cntr/(double)samples_to_interpolate);
+	}
+	else
+	{
+		harm_coeff=harm_coeffs2[0] + (harm_coeffs1[0] - harm_coeffs2[0])*((double)interp_cntr/(double)samples_to_interpolate);
+	}
+	sample_val+=32767/harm_coeff;
 	while(current_frequency*harm_cntr<F_LIMIT)
 	{
-		intphase=(int)harm_phase;
-		if(harm_coeffs[harm_cntr]>-32767 && harm_coeffs[harm_cntr] < 32767)
+		if(coeffs_active==1)
 		{
-			sample_val+=(*(sinewaves + intphase))/harm_coeffs[harm_cntr];
+			harm_coeff=harm_coeffs2[harm_cntr] + (harm_coeffs1[harm_cntr] - harm_coeffs2[harm_cntr])*((double)interp_cntr/(double)samples_to_interpolate);
+		}
+		else
+		{
+			harm_coeff=harm_coeffs1[harm_cntr] + (harm_coeffs2[harm_cntr] - harm_coeffs1[harm_cntr])*((double)interp_cntr/(double)samples_to_interpolate);
+		}
+		intphase=(int)harm_phase;
+		if(harm_coeff>-32767 && harm_coeff < 32767 && harm_coeff!=0)
+		{
+			sample_val+=(*(sinewaves + intphase))/harm_coeff;
 		}
 		//sample_val=sample_val << 2;
 		harm_phase+=current_phase;
@@ -158,6 +203,10 @@ short Oscillator::get_nextval()
 	if(current_phase >= SINE_SAMPLES)
 	{
 		current_phase -= (double)SINE_SAMPLES;
+	}
+	if(interp_cntr < samples_to_interpolate - 1)
+	{
+		interp_cntr++;
 	}
 	return sample_val;
 }

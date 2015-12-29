@@ -48,7 +48,7 @@ double currval=0;
 		if(time_in_phase+delta_t > decay)
 		{
 			time_in_phase = time_in_phase+delta_t - decay;
-			phase = 2;
+			phase = 3;
 		}
 		else
 		{
@@ -97,12 +97,12 @@ double currval=0;
 
 void Envelope::setAttack(double a)
 {
-	attack =a;
+	attack =a/1000.0;
 }
 
 void Envelope::setDecay(double d)
 {
-	decay =d;
+	decay =d/1000.0;
 }
 
 void Envelope::setSustain(double s)
@@ -112,7 +112,7 @@ void Envelope::setSustain(double s)
 
 void Envelope::setRelease(double r)
 {
-	release = r;
+	release = r/1000.0;
 }
 
 double Envelope::getAttack()
