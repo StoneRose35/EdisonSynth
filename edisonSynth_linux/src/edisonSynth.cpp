@@ -133,7 +133,7 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  double t_total=0.0;
 	  double t_total_old=0.0;
 	  voc=new Voice();
-	  rc=snd_pcm_open(&handle,"plughw:0,0",SND_PCM_STREAM_PLAYBACK,0); // plughw:0,0 would be the internal sound card
+	  rc=snd_pcm_open(&handle,"hw:CARD=PCH,DEV=0",SND_PCM_STREAM_PLAYBACK,0); // plughw:0,0 would be the internal sound card
 	  printIfError(rc);
 
 	  snd_pcm_hw_params_alloca(&params);
@@ -203,18 +203,19 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  	  char note=14;
 	  	  voc->set_note((int)note);
 	  	  voc->set_on_off(0);
+	  	  voc->o2->set_waveform(0);
 	  	  voc->o2->set_fcutoff(2600);
 	  	  voc->o2->set_resonance(-1.98);
-	  	  voc->o2->set_symm(0.01);
-	  	  voc->env_vol->setAttack(420);
+	  	  voc->o2->set_symm(0.5);
+	  	  voc->env_vol->setAttack(1);
 	  	  voc->env_vol->setDecay(1);
 	  	  voc->env_vol->setSustain(1.0);
 	  	  voc->env_vol->setRelease(420);
-	  	  voc->env_div->setAttack(220);
-	  	  voc->env_div->setDecay(45);
-	  	  voc->env_div->setSustain(0.8);
+	  	  voc->env_div->setAttack(1);
+	  	  voc->env_div->setDecay(154);
+	  	  voc->env_div->setSustain(0.0);
 	  	  voc->env_div->setRelease(420);
-	  	  voc->lfo1->set_frequency(1.23);
+	  	  voc->lfo1->set_frequency(2.78);
 	  	  char note_toggle=0;
 	  	  while(1)
 	  	  {
@@ -288,21 +289,66 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 }
 
 
+double getFrequency(double notenumber)
+{
+	return 440.0*pow(TWO_TWROOT,notenumber);
+}
+
 int main() {
-	//ofstream wavetable;
-	//wavetable.open("wave.txt",ios::out);
-	sine_wavetable_reader();
-	init_alsa_device(handle,params,sw_params);
 	/*
-	Oscillator o1;
-	o1.set_f(getFrequency(22-48));
+	ofstream wavetable;
+	wavetable.open("wave.txt",ios::out);
+	sine_wavetable_reader();
+*/
+
+	// THIS STARTS THE SOUND!!
+	init_alsa_device(handle,params,sw_params);
+
+	/*
+	voc = new Voice();
+  char note=14;
+  voc->set_note((int)note);
+  voc->set_on_off(0);
+  voc->set_osc1_level(0.8);
+  voc->set_osc2_level(0.0);
+  voc->o1->set_waveform(0);
+  voc->o1->set_symm(0.45);
+  voc->o1->set_fcutoff(850);
+  voc->o1->set_resonance(-0.0);
+
+  voc->o2->set_waveform(1);
+  voc->o2->set_fcutoff(2600);
+  voc->o2->set_resonance(-1.98);
+  voc->o2->set_symm(0.01);
+  voc->env_vol->setAttack(1);
+  voc->env_vol->setDecay(1);
+  voc->env_vol->setSustain(1.0);
+  voc->env_vol->setRelease(420);
+  voc->env_div->setAttack(220);
+  voc->env_div->setDecay(45);
+  voc->env_div->setSustain(0.8);
+  voc->env_div->setRelease(420);
+  voc->lfo1->set_frequency(1.23);
+  voc->set_on_off(1);
+  voc->update(5);
+  voc->update(5);
+*/
+
+
+
+	/*Oscillator o1;
+	o1.set_f(getFrequency(14-48));
 	o1.set_waveform(1);
-	o1.recalc_coeffs(1.0);
+	o1.set_symm(0.01);
+	o1.recalc_coeffs(256);
+	o1.recalc_coeffs(256);
+*/
+/*
 	for(int k=0;k< 2048 ;k++)
 	{
-		wavetable << o1.get_nextval() << endl;
+		wavetable << voc->get_nextval() << endl;
 	}
 	wavetable.close();
-	*/
+*/
 	return 0;
 }

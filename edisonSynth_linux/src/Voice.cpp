@@ -21,19 +21,19 @@ Voice::Voice()
 	env_div=new Envelope();
 	o1->set_waveform(0);
 	o2->set_waveform(1);
-	osc1_divider = 1000;
-	osc2_divider = 2;
+	osc1_amt = 0.0;
+	osc2_amt = 1.0;
 	osc1_semitones=0;
-	osc2_semitones=12;
+	osc2_semitones=0;
 	current_note=22;
 	// fill both coefficients buffers
-	o1->recalc_coeffs(FRAMES_BUFFER);
-	o2->recalc_coeffs(FRAMES_BUFFER);
-	o1->recalc_coeffs(FRAMES_BUFFER);
-	o2->recalc_coeffs(FRAMES_BUFFER);
+	o1->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc1_semitones)));
+	o2->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc2_semitones)));
+	o1->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc1_semitones)));
+	o2->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc2_semitones)));
 	is_on=0;
-	env_divider1=32767;
-	env_divider2=32767;
+	env_value1=0.0;
+	env_value2=0.0;
 	param_set_active=1;
 	samples_to_interpolate=FRAMES_BUFFER;
 	interp_cntr=0;
@@ -43,38 +43,39 @@ void Voice::set_note(int note)
 {
 	current_note=note;
 	double f = get_frequency((double)(current_note - 48 + osc1_semitones));
-	o1->set_f(f);
-	o2->set_f(f);
+	o1->recalc_coeffs(FRAMES_BUFFER,f);
+	f = get_frequency((double)(current_note - 48 + osc2_semitones));
+	o2->recalc_coeffs(FRAMES_BUFFER,f);
 }
 
 short Voice::get_nextval()
 {
-	short result=0;
-	short env_divider;
+	double result=0;
+	double env_amt;
 
 
 	if(!env_vol->isOn())
 	{
-		return result;
+		return 0;
 	}
 	else
 	{
 		if(param_set_active == 1 )
 		{
-			env_divider = env_divider1 + (env_divider2-env_divider1)*((double)interp_cntr/(double)samples_to_interpolate);
+			env_amt = env_value1 + (env_value2-env_value1)*((double)interp_cntr/(double)samples_to_interpolate);
 		}
 		else
 		{
-			env_divider = env_divider2 + (env_divider1-env_divider2)*((double)interp_cntr/(double)samples_to_interpolate);
+			env_amt = env_value2 + (env_value1-env_value2)*((double)interp_cntr/(double)samples_to_interpolate);
 		}
 		if(interp_cntr < samples_to_interpolate - 1)
 		{
 			interp_cntr++;
 		}
-		result=o1->get_nextval()/ osc1_divider;
-		result+= o2->get_nextval() / osc2_divider;
-		result/=env_divider;
-		return result;
+		result=o1->get_nextval()*osc1_amt;
+		result+= o2->get_nextval()*osc2_amt;
+		result*=env_amt;
+		return (short)(result*32767);
 	}
 
 }
@@ -100,51 +101,45 @@ void Voice::update(double delta_t)
 	// set modulation matrix (which source goes to which target)
 
 	// set new oscillator properties (frequency, symmetry, filter q, filter f)
-	o1->set_fcutoff(get_frequency(current_note*0.5 + eval2*24));
-	o2->set_fcutoff(get_frequency(current_note*0.5 + eval2*24));
+    o1->set_fcutoff(240+get_frequency(eval2*24));
+	o2->set_fcutoff(140+get_frequency(eval2*24));
+	o2->set_symm(lfo1val*0.1+0.5);
 
 	// calculator new oscillator coefficients
 	int n_samples;
 	n_samples=SAMPLING_RATE*delta_t;
-	o1->recalc_coeffs(n_samples);
-	o2->recalc_coeffs(n_samples);
+	o1->recalc_coeffs(n_samples,get_frequency((double)(current_note - 48 + osc1_semitones)));
+	o2->recalc_coeffs(n_samples,get_frequency((double)(current_note - 48 + osc2_semitones)));
 
-	if(eval == 0)
+
+	if(param_set_active==1)
 	{
-		if(param_set_active==1)
-		{
-			env_divider2=32767;
-			param_set_active=2;
-		}
-		else
-		{
-			env_divider1=32767;
-			param_set_active=1;
-		}
+		env_value2=eval;
+		param_set_active=2;
 	}
 	else
 	{
-		if(param_set_active==1)
-		{
-			env_divider2=(short)(1.0/eval);
-			param_set_active=2;
-		}
-		else
-		{
-			env_divider1=(short)(1.0/eval);
-			param_set_active=1;
-		}
+		env_value1=eval;
+		param_set_active=1;
 	}
 }
 
 void Voice::set_osc1_level(double level)
 {
-	osc1_divider = (int)((1.0-level)*32765.0+2.0);
+	osc1_amt = level;
+	if(osc1_amt + osc2_amt > 1)
+	{
+		osc2_amt = 1- (osc1_amt + osc2_amt);
+	}
 }
 
 void Voice::set_osc2_level(double level)
 {
-	osc2_divider = (int)((1.0-level)*32765.0+2.0);
+	osc2_amt = level;
+	if(osc1_amt + osc2_amt > 1)
+	{
+		osc1_amt = 1- (osc1_amt + osc2_amt);
+	}
 }
 void Voice::set_on_off(char on_off)
 {
