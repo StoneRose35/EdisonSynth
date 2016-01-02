@@ -125,7 +125,7 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 {
 	int rc;
 	char *buffer;
-	    int size = nframes * 4; /* 2 bytes/sample, 2 channels */
+	    int size = nframes * 2 * N_CHANNELS;
 	      buffer = (char *) malloc(size);
 
 	    short sample_val;
@@ -134,10 +134,14 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 	  	  for( int j=0;j<size;j+=4)
 	  	  {
 	    	sample_val=voc->get_nextval();
-			*(buffer + j + 0) = sample_val & 0xff;
-			*(buffer + j + 1) = (sample_val >> 8) & 0xff;
-			*(buffer + j + 2) = sample_val & 0xff;
-			*(buffer + j + 3) = (sample_val >> 8) & 0xff;
+	    	for(int nc=0;nc<N_CHANNELS*2;nc+=2)
+	    	{
+	    		*(buffer + j + nc) = sample_val & 0xff;
+	    		*(buffer + j + nc + 1) = (sample_val >> 8) & 0xff;
+	    	//*(buffer + j + 3) = sample_val & 0xff;
+	    	//*(buffer + j + 4) = (sample_val >> 8) & 0xff;
+	    	}
+
 	  	  }
 	  	  //cout << " integer phase: " << intphase << ", table value: " << *(sinewave + intphase) << endl;
 		  //cout << " s val: " << sample_val << endl;
@@ -185,7 +189,7 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	                                SND_PCM_FORMAT_S16_LE);
 	  printIfError(rc);
 
-	  rc = snd_pcm_hw_params_set_channels(handle, params, 2);
+	  rc = snd_pcm_hw_params_set_channels(handle, params, N_CHANNELS);
 	  printIfError(rc);
 
 	  int dir;
