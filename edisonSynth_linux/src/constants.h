@@ -16,6 +16,7 @@
 #define SINE_SAMPLES 16384
 #define SINE_SAMPLES_4 4096
 #define FRAMES_BUFFER 256
+#define CONFIG_FILE "sound_dev.cfg"
 
 
 

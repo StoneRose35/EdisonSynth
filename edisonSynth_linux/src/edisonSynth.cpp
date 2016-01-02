@@ -13,10 +13,11 @@
 #include <fstream>
 #include <limits>
 #include <alsa/asoundlib.h>
+#include <string.h>
 #include "Oscillator.h"
 #include "Voice.h"
-using namespace std;
 
+using namespace std;
 
 
 short *sinewave;
@@ -28,7 +29,9 @@ Voice* voc;
 
 
 
-
+/**
+ * NOT USED, used the read the sine table
+ * */
 void sine_wavetable_reader()
 {
 	ifstream wt_in;
@@ -44,7 +47,28 @@ void sine_wavetable_reader()
 }
 
 
+/*
+ * reads the config file containing the alsa device string as the only content
+ * */
+char * read_config()
+{
+	char* result;
 
+	ifstream cfg_stream;
+	streampos fsize;
+	string str_res;
+	cfg_stream.open(CONFIG_FILE);
+	getline(cfg_stream,str_res);
+	cfg_stream.close();
+	int sz = str_res.size();
+	result=new char[sz];
+	str_res.copy(result,sz,0);
+	return result;
+}
+
+/**
+ * print information about the sound driver
+ */
 void show_alsa_info()
 {
 	cout << "Alsa library version: " << SND_LIB_VERSION_STR << endl;
@@ -91,6 +115,12 @@ void printIfError(int rc)
   }
 }
 
+
+/**
+ * the callback function doing the sample calculation, basically mixes all active voices sound output together
+ * the places the values as short integers into the write buffer the passes them to also, which in turn does the rest of the
+ * magic...
+ * */
 int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 {
 	int rc;
@@ -124,7 +154,12 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 	return rc;
 }
 
-void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params_t *sw_params)
+/**
+ * initializes the alsa device and the synth classes
+ * then starts the synth engine, playback is interrupt-driven with playback_callback being the sampling routine
+ * modulators update is done in the loop within this function, using Voice->update
+ *  * */
+void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params_t *sw_params)
 {
 	  int rc;
 	  unsigned int val=SAMPLING_RATE;
@@ -133,7 +168,8 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  double t_total=0.0;
 	  double t_total_old=0.0;
 	  voc=new Voice();
-	  rc=snd_pcm_open(&handle,"hw:CARD=PCH,DEV=0",SND_PCM_STREAM_PLAYBACK,0); // plughw:0,0 would be the internal sound card
+	  const char* snd_dev=read_config();
+	  rc=snd_pcm_open(&handle,snd_dev,SND_PCM_STREAM_PLAYBACK,0);
 	  printIfError(rc);
 
 	  snd_pcm_hw_params_alloca(&params);
@@ -157,11 +193,6 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	  rc = snd_pcm_hw_params_set_rate_near(handle,
 	  	                                   params, &val, &dir);
 	  printIfError(rc);
-
-	  //snd_pcm_uframes_t frames = FRAMES_BUFFER;
-	  //snd_pcm_hw_params_set_period_size_near(handle,
-	  //	                                params, &frames, &dir);
-	  //printIfError(rc);
 
 	rc = snd_pcm_hw_params(handle, params);
 	if(rc < 0)
@@ -188,12 +219,6 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 	{
 		cout << "cannot set software parameters" << endl;
 	}
-	  	    //unsigned long bufferSize;
-
-	  	  //snd_pcm_hw_params_get_buffer_size( params, &bufferSize );
-
-	  	  //cout << "Init: Buffer size = " << bufferSize << " frames." << endl;
-
 
 	  	  if ((rc= snd_pcm_prepare (handle)) < 0)
 	  	  {
@@ -239,27 +264,18 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 			frames_to_deliver = frames_to_deliver > FRAMES_BUFFER ? FRAMES_BUFFER : frames_to_deliver;
 
 			/* deliver the data */
-
 			if (playback_callback (handle,frames_to_deliver) != frames_to_deliver) {
 					fprintf (stderr, "playback callback failed\n");
 				break;
 			}
+			//clock_t time=clock();
 			delta_t=(double)frames_to_deliver / (double)SAMPLING_RATE;
-			//
-			// compute new value of envelopes and LFO's
 
-			// set random notes every second
+
 			t_total+=delta_t;
-			//cout << "t_total is: " << t_total << endl;
-			/*if(t_total > 15.0 && t_total - t_total_old > 0.25)
-			{
-				//voc.set_note(rand()%30+4);
-				voc->o1->set_symm(0.45*sin(t_total/3.0)+0.5);
-				voc->o2->set_symm(0.45*cos(t_total/3.0)+0.5);
-				t_total_old=t_total;
-				cout << "should update note " << endl;
-			}*/
-			if(t_total-t_total_old > 0.67)
+
+			// toggle note every 0.7 secs, increasing the note by one semitone every 1.4s
+			if(t_total-t_total_old > 0.7)
 			{
 				t_total_old=t_total;
 				if(note_toggle==0)
@@ -280,7 +296,10 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 
 			//voc->o1->set_symm(0.45*sin(t_total/0.6)+0.5);
 			//voc->o2->set_symm(0.45*cos(t_total/0.8)+0.5);
+
 			voc->update(delta_t);
+			//time =clock() - time;
+			//cout << double(time)/CLOCKS_PER_SEC*1000 << " of a max of " << (double)FRAMES_BUFFER/(double)SAMPLING_RATE*1000.0 << " ms elapsed" << endl;
 	  	  }
 
 	  	  //generate_sound2(params,handle);
@@ -289,6 +308,10 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 }
 
 
+/**
+ * computes the frequency given the note number, note number 0 has 440Hz,
+ * note range goes from -48 up to 40
+ */
 double getFrequency(double notenumber)
 {
 	return 440.0*pow(TWO_TWROOT,notenumber);
@@ -302,7 +325,7 @@ int main() {
 */
 
 	// THIS STARTS THE SOUND!!
-	init_alsa_device(handle,params,sw_params);
+	start_audio(handle,params,sw_params);
 
 	/*
 	voc = new Voice();

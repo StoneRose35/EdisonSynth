@@ -39,6 +39,10 @@ Voice::Voice()
 	interp_cntr=0;
 }
 
+
+/**
+ * sets the note of the the Voice, the fourier coefficient are recalculated casing the interpolation counter of the oscillator to be reset
+ * */
 void Voice::set_note(int note)
 {
 	current_note=note;
@@ -48,6 +52,9 @@ void Voice::set_note(int note)
 	o2->recalc_coeffs(FRAMES_BUFFER,f);
 }
 
+/*
+ * gets the next sample value of the voice, (almsot) no computation is done the the voice is off
+ * */
 short Voice::get_nextval()
 {
 	double result=0;
@@ -85,6 +92,10 @@ double Voice::get_frequency(double notenumber)
 	return 440.0*pow(TWO_TWROOT,notenumber);
 }
 
+/**
+ * updates the fourier coefficients and the volume envelope values,
+ * first applies all modulators
+ */
 void Voice::update(double delta_t)
 {
 	double eval;
@@ -124,6 +135,10 @@ void Voice::update(double delta_t)
 	}
 }
 
+/**
+ * sets the level of oscillator 1, range goes from 0 to 1
+ * automatically adjusts the level of oscillator 2 to avoid clipping
+ */
 void Voice::set_osc1_level(double level)
 {
 	osc1_amt = level;
@@ -133,6 +148,10 @@ void Voice::set_osc1_level(double level)
 	}
 }
 
+/**
+ * sets the level of oscillator 2, range goes from 0 to 1
+ * automatically adjusts the level of oscillator 1 to avoid clipping
+ */
 void Voice::set_osc2_level(double level)
 {
 	osc2_amt = level;
@@ -141,6 +160,11 @@ void Voice::set_osc2_level(double level)
 		osc1_amt = 1- (osc1_amt + osc2_amt);
 	}
 }
+
+/**
+ * switches the voice on or off, after switching off the voice the voice might still be "active" depending on the release value of the
+ * volume envelope
+ */
 void Voice::set_on_off(char on_off)
 {
 	if(on_off ==0)
