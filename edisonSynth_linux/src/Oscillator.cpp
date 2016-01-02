@@ -163,7 +163,7 @@ double Oscillator::get_nextval()
 	d_phase = (double)SINE_SAMPLES*current_frequency/(double)SAMPLING_RATE;
 	sample_val+=harm_coeff;
 
-	while(current_frequency*harm_cntr<F_LIMIT && harm_cntr < 5)
+	while(current_frequency*harm_cntr<F_LIMIT)
 	{
 		if(coeffs_active==1)
 		{
