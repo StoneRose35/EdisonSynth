@@ -4,7 +4,7 @@
  *  Created on: Dec 5, 2015
  *      Author: philipp
  */
-
+/*
 #include "constants.h"
 #include "edisonSynth.h"
 #include <iostream>
@@ -44,7 +44,7 @@ void generate_sound(snd_pcm_hw_params_t *params,snd_pcm_t *handle)
 	snd_pcm_uframes_t frames;
 
     char *buffer;
-    int size = frames * 4; /* 2 bytes/sample, 2 channels */
+    int size = frames * 4;
       buffer = (char *) malloc(size);
 	int note =22;
 		      double f=223; //getFrequency(note-48);
@@ -109,3 +109,4 @@ void sawtooth_wavetable_reader()
 	}
 	wt_in.close();
 }
+*/

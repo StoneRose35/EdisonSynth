@@ -287,7 +287,7 @@ void init_alsa_device(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_p
 
 }
 
-
+#ifndef TESTING
 int main() {
 	//ofstream wavetable;
 	//wavetable.open("wave.txt",ios::out);
@@ -306,3 +306,4 @@ int main() {
 	*/
 	return 0;
 }
+#endif

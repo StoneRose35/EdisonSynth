@@ -88,14 +88,14 @@ void Voice::update(double delta_t)
 {
 	double eval;
 	double eval2;
-	double lfo1val;
-	double lfo2val;
+	//double lfo1val;
+	//double lfo2val;
 
 	// update all modulators (Evelopes, LFO's)
 	eval=env_vol->nextval(delta_t);
 	eval2=env_div->nextval(delta_t);
-	lfo1val=lfo1->get_nextval(delta_t);
-	lfo2val=lfo2->get_nextval(delta_t);
+	//lfo1val=lfo1->get_nextval(delta_t);
+	//lfo2val=lfo2->get_nextval(delta_t);
 
 	// set modulation matrix (which source goes to which target)
 
