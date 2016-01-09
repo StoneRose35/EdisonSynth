@@ -19,12 +19,12 @@ class Voice
 private:
 	int current_note;
 	char is_on; // 0: off, 1: on
-	short osc1_divider; // goes from 2 to 32767
-	short osc2_divider;
+	double osc1_amt; // goes from 0 to  1
+	double osc2_amt;
 	short osc1_semitones;
 	short osc2_semitones;
-	short env_divider1;
-	short env_divider2;
+	double env_value1;
+	double env_value2;
 	char param_set_active; // either 1 or 2
 	int interp_cntr;
 	int samples_to_interpolate;

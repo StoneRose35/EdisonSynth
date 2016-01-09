@@ -12,14 +12,16 @@
 class Oscillator
 {
 	short* sinewaves;
-	short* harm_coeffs1;
-	short* harm_coeffs2;
+	double* harm_coeffs1;
+	double* harm_coeffs2;
 	short* harm_coeffs_swap;
 	char coeffs_active; //1 or 2
 	int samples_to_interpolate; // for how many samples the coefficients should be interpolated;
 	int interp_cntr; // the interpolation counter, increases with each get_nextval(), is reset when recalc_coeffs() is called
 	double current_phase;
 	double current_frequency;
+	double frequency_1;
+	double frequency_2;
 	double d_phase;
 	double current_symm; // symm goes from 1 (symmetric) to 0.01 (asymmetric)
 	int waveform; //0: square, 1: triangle/sawtooth
@@ -28,13 +30,12 @@ class Oscillator
 
 public:
 	Oscillator();
-	short get_nextval();
+	double get_nextval();
 	int get_waveform();
 	void set_waveform(int wf);
 	void reset();
-	void set_f(double f);
 	void set_symm(double s);
-	void recalc_coeffs(int nsamples);
+	void recalc_coeffs(int nsamples,double nfreq);
 	void set_fcutoff(double fc);
 	void set_resonance(double k);
 };

@@ -60,7 +60,7 @@ double LFO::get_nextval(double delta_t)
 }
 
 LFO::LFO() {
-	frequency=0.22;
+	frequency=2.45;
 	waveform=1;
 	current_phase=0;
 
