@@ -320,7 +320,7 @@ double getFrequency(double notenumber)
 {
 	return 440.0*pow(TWO_TWROOT,notenumber);
 }
-
+#ifndef TESTING
 int main() {
 	/*
 	ofstream wavetable;
@@ -379,3 +379,4 @@ int main() {
 */
 	return 0;
 }
+#endif

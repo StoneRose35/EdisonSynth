@@ -80,7 +80,7 @@ void Oscillator::recalc_coeffs(int nsamples,double nfreq)
 	{
 		f_harm=current_frequency*ii;
 		q=(1.0+(f_harm/f_cutoff)*(f_harm/f_cutoff));
-		filter_coeff = 1.0/sqrt(q*q*q*q + resonance*resonance -2*resonance*q*q*cos(4*atan(f_harm/f_cutoff)));
+		filter_coeff = 1.0;// 1.0/sqrt(q*q*q*q + resonance*resonance -2*resonance*q*q*cos(4*atan(f_harm/f_cutoff)));
 		if(waveform==0) // square wave
 		{
 			if(ii==0)
@@ -114,21 +114,21 @@ void Oscillator::recalc_coeffs(int nsamples,double nfreq)
 	}
 
 
-	if(coeffs_active==1)
-	{
+	//if(coeffs_active==1)
+	//{
 		// set coefficients 2
-		harm_killer=harm_coeffs2;
-		harm_coeffs2=coeffs2;
-		frequency_2=nfreq;
-		coeffs_active=2;
-	}
-	else
-	{
+	//	harm_killer=harm_coeffs2;
+	//	harm_coeffs2=coeffs2;
+	//	frequency_2=nfreq;
+	//	coeffs_active=2;
+	//}
+	//else
+	//{
 		harm_killer=harm_coeffs1;
 		harm_coeffs1=coeffs2;
 		frequency_1=nfreq;
-		coeffs_active=1;
-	}
+	//	coeffs_active=1;
+	//}
 	samples_to_interpolate=nsamples;
 	interp_cntr=0;
 	delete harm_killer;
@@ -149,30 +149,30 @@ double Oscillator::get_nextval()
 
 	harm_phase=current_phase;
 
-	if(coeffs_active==1)
-	{
-		harm_coeff=harm_coeffs1[0] + (harm_coeffs2[0] - harm_coeffs2[0])*((double)interp_cntr/(double)samples_to_interpolate);
-		current_frequency = frequency_1 + (frequency_2 - frequency_1)*((double)interp_cntr/(double)samples_to_interpolate);
-	}
-	else
-	{
-		harm_coeff=harm_coeffs2[0] + (harm_coeffs1[0] - harm_coeffs2[0])*((double)interp_cntr/(double)samples_to_interpolate);
-		current_frequency = frequency_2 + (frequency_1 - frequency_2)*((double)interp_cntr/(double)samples_to_interpolate);
-	}
+	///if(coeffs_active==1)
+	//{
+		harm_coeff=harm_coeffs1[0];// + (harm_coeffs2[0] - harm_coeffs2[0])*((double)interp_cntr/(double)samples_to_interpolate);
+		current_frequency = frequency_1;// + (frequency_2 - frequency_1)*((double)interp_cntr/(double)samples_to_interpolate);
+	//}
+	//else
+	//{
+	//	harm_coeff=harm_coeffs2[0];// + (harm_coeffs1[0] - harm_coeffs2[0])*((double)interp_cntr/(double)samples_to_interpolate);
+	//	current_frequency = frequency_2;// + (frequency_1 - frequency_2)*((double)interp_cntr/(double)samples_to_interpolate);
+	//}
 
-	d_phase = (double)SINE_SAMPLES*current_frequency/(double)SAMPLING_RATE;
+	d_phase = 1;//(double)SINE_SAMPLES*current_frequency/(double)SAMPLING_RATE;
 	sample_val+=harm_coeff;
 
-	while(current_frequency*harm_cntr<F_LIMIT && harm_cntr < 5)
+	while(current_frequency*harm_cntr<F_LIMIT)
 	{
-		if(coeffs_active==1)
-		{
-			harm_coeff=harm_coeffs2[harm_cntr] + (harm_coeffs1[harm_cntr] - harm_coeffs2[harm_cntr])*((double)interp_cntr/(double)samples_to_interpolate);
-		}
-		else
-		{
-			harm_coeff=harm_coeffs1[harm_cntr] + (harm_coeffs2[harm_cntr] - harm_coeffs1[harm_cntr])*((double)interp_cntr/(double)samples_to_interpolate);
-		}
+		//if(coeffs_active==1)
+		//{
+			harm_coeff=harm_coeffs1[harm_cntr];// + (harm_coeffs2[harm_cntr] - harm_coeffs1[harm_cntr])*((double)interp_cntr/(double)samples_to_interpolate);
+		//}
+		//else
+		//{
+		//	harm_coeff=harm_coeffs1[harm_cntr];// + (harm_coeffs2[harm_cntr] - harm_coeffs1[harm_cntr])*((double)interp_cntr/(double)samples_to_interpolate);
+		//}
 		intphase=(int)harm_phase;
 
 		if(waveform==1)
