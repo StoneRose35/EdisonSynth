@@ -18,7 +18,6 @@ void generate_wavetable()
 	ofstream wavetable;
 	ofstream textout;
 	wavetable.open(WAVETABLE_FILENAME,ios::binary|ios::out);
-	textout.open("onewave.txt");
 
 	short*** res;
 
@@ -46,14 +45,10 @@ void generate_wavetable()
 			{
 				res[a][b][c]=static_cast<unsigned short>(o->compute_nextval());
 				wavetable.write(reinterpret_cast<char*>( &res[a][b][c] ) ,sizeof(res[a][b][c]));
-				if(a==0 && b==128)
-				{
-					textout << res[a][b][c] << endl;
-				}
 			}
 		}
 	}
-	textout.close();
+
 	wavetable.close();
 
 
