@@ -26,11 +26,14 @@ private:
 	int waveform; //0: square, 1: triangle/sawtooth
 	short*** wavetable;
 
+	double* harm_coeffs1;
+
 	void recalc_coeffs(int nsamples,double nfreq);
 
 public:
 	Oscillator(short*** wavetable);
 	double get_nextval();
+	double compute_nextval();
 	int get_waveform();
 	void set_waveform(int wf);
 	void reset();

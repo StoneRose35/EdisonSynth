@@ -47,7 +47,7 @@ void Oscillator::recalc_coeffs(int nsamples,double nfreq)
 	double f_harm;
 	double filter_coeff;
 	double sum_coeffs=0;
-	coeffs2=new double[512];
+	harm_coeffs1=new double[512];
 	for(int ii=0;ii<512;ii++)
 	{
 		f_harm=current_frequency*ii;
@@ -76,34 +76,14 @@ void Oscillator::recalc_coeffs(int nsamples,double nfreq)
 			}
 		}
 		sum_coeffs+=raw_val*raw_val;
-		*(coeffs2+ii)=raw_val;
+		*(harm_coeffs1+ii)=raw_val;
 
-
-
-
-		//cout << "abs(raw val) is: " << fabs(raw_val) << endl;
-		//cout << " coefficient #" << ii << " :" << *(coeffs2+ii) << endl;
 	}
 
-
-	//if(coeffs_active==1)
-	//{
-		// set coefficients 2
-	//	harm_killer=harm_coeffs2;
-	//	harm_coeffs2=coeffs2;
-	//	frequency_2=nfreq;
-	//	coeffs_active=2;
-	//}
-	//else
-	//{
-		//harm_killer=harm_coeffs1;
-		//harm_coeffs1=coeffs2;
 		frequency_1=nfreq;
-	//	coeffs_active=1;
-	//}
+
 	samples_to_interpolate=nsamples;
 	interp_cntr=0;
-	delete harm_killer;
 }
 void Oscillator::set_symm(double s)
 {
@@ -151,6 +131,64 @@ double Oscillator::get_nextval()
 	sample_val=wavetable[fInt][symmInt][phaseInt];
 
 
+	if(interp_cntr < samples_to_interpolate - 1)
+	{
+		interp_cntr++;
+	}
+	return sample_val;
+}
+
+/**
+ * used only for the generation of the wavetable
+ */
+double Oscillator::compute_nextval()
+{
+	int harm_cntr=1;
+
+	int intphase;
+	double harm_phase;
+	double sample_val=0;
+	double harm_coeff;
+
+	harm_phase=current_phase;
+
+
+		harm_coeff=harm_coeffs1[0];
+		current_frequency = frequency_1;
+
+
+	d_phase = 1;
+	sample_val+=harm_coeff;
+
+	while(current_frequency*harm_cntr<F_LIMIT)
+	{
+
+			harm_coeff=harm_coeffs1[harm_cntr];
+		intphase=(int)harm_phase;
+
+		if(waveform==1)
+		{
+			sample_val+=sin(harm_phase*2.0*M_PI/SINE_SAMPLES)*harm_coeff;
+		}
+		else
+		{
+			sample_val+=cos(harm_phase*2.0*M_PI/SINE_SAMPLES)*harm_coeff;
+		}
+
+		//sample_val=sample_val << 2;
+		harm_phase+=current_phase;
+		if (harm_phase > SINE_SAMPLES)
+		{
+			harm_phase -= SINE_SAMPLES;
+		}
+		harm_cntr++;
+	}
+	//cout << " harmonics used: " << harm_cntr << endl;
+	current_phase+=d_phase;
+	if(current_phase >= SINE_SAMPLES)
+	{
+		current_phase -= (double)SINE_SAMPLES;
+	}
 	if(interp_cntr < samples_to_interpolate - 1)
 	{
 		interp_cntr++;
