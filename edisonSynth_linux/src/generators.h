@@ -10,6 +10,7 @@
 
 short*** read_wavetable();
 
+void generate_wavetable();
 
 
 #endif /* GENERATORS_H_ */

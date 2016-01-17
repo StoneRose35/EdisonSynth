@@ -28,12 +28,13 @@ private:
 
 	double* harm_coeffs1;
 
-	void recalc_coeffs(int nsamples,double nfreq);
+
 
 public:
+	Oscillator();
 	Oscillator(short*** wavetable);
 	double get_nextval();
-	double compute_nextval();
+	short compute_nextval();
 	int get_waveform();
 	void set_waveform(int wf);
 	void reset();
@@ -41,6 +42,7 @@ public:
 	double getNote(double f);
 	void update(double symmetry,double frequency);
 	void update(double frequency);
+	void recalc_coeffs();
 };
 
 

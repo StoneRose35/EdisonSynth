@@ -37,9 +37,25 @@ Oscillator::Oscillator(short*** wt)
 	wavetable=wt;
 }
 
+Oscillator::Oscillator()
+{
+	samples_to_interpolate=FRAMES_BUFFER;
+	interp_cntr=0;
+	current_phase=0;
+	current_frequency=225;
+	current_symm=1.0;
+	frequency_1=225;
+	frequency_2=225;
+	symm1=1;
+	symm2=1;
+	coeffs_active=1;
+	waveform=1;
+	d_phase=(double)SINE_SAMPLES*current_frequency/(double)SAMPLING_RATE;
+}
 
 
-void Oscillator::recalc_coeffs(int nsamples,double nfreq)
+
+void Oscillator::recalc_coeffs()
 {
 	double* coeffs2;
 	double* harm_killer;
@@ -47,6 +63,10 @@ void Oscillator::recalc_coeffs(int nsamples,double nfreq)
 	double f_harm;
 	double filter_coeff;
 	double sum_coeffs=0;
+	if(harm_coeffs1)
+	{
+		delete harm_coeffs1;
+	}
 	harm_coeffs1=new double[512];
 	for(int ii=0;ii<512;ii++)
 	{
@@ -79,11 +99,6 @@ void Oscillator::recalc_coeffs(int nsamples,double nfreq)
 		*(harm_coeffs1+ii)=raw_val;
 
 	}
-
-		frequency_1=nfreq;
-
-	samples_to_interpolate=nsamples;
-	interp_cntr=0;
 }
 void Oscillator::set_symm(double s)
 {
@@ -141,7 +156,7 @@ double Oscillator::get_nextval()
 /**
  * used only for the generation of the wavetable
  */
-double Oscillator::compute_nextval()
+short Oscillator::compute_nextval()
 {
 	int harm_cntr=1;
 
@@ -193,7 +208,7 @@ double Oscillator::compute_nextval()
 	{
 		interp_cntr++;
 	}
-	return sample_val;
+	return (short)(sample_val*32767);
 }
 
 void Oscillator::update(double symmetry,double frequency)

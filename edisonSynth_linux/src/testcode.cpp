@@ -15,10 +15,12 @@ using namespace std;
 #ifdef TESTING
 int main()
 {
+
+	generate_wavetable();
+
 	short*** wt;
 	wt=read_wavetable();
 
-	wt[0][0][0];
 	Voice* voc=new Voice(wt);
 
 
