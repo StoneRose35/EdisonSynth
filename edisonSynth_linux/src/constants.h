@@ -25,6 +25,15 @@
 #define CONFIG_FILE "sound_dev.cfg"
 
 
+/**
+ * precomputed numbers
+ */
+#define TWO_TWROOT 1.059463094359295310 // twelve'th root of two
+#define LOG440 6.0867747269 // the natural logarithm of 440
+#define TWELVE_DIV_LOG2 17.3123404906676000 // 12/ln(2)
+
+
+
 /*
  * Configuration constants for the build toolchain
  * */

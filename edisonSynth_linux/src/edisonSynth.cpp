@@ -166,12 +166,16 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params_t *sw_params)
 {
 	  int rc;
+	  short*** wavetable;
 	  unsigned int val=SAMPLING_RATE;
 	  snd_pcm_sframes_t frames_to_deliver;
 	  double delta_t;
 	  double t_total=0.0;
 	  double t_total_old=0.0;
-	  voc=new Voice();
+
+
+	  wavetable=read_wavetable();
+	  voc=new Voice(wavetable);
 	  const char* snd_dev=read_config();
 	  rc=snd_pcm_open(&handle,snd_dev,SND_PCM_STREAM_PLAYBACK,0);
 	  printIfError(rc);
@@ -233,8 +237,6 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  	  voc->set_note((int)note);
 	  	  voc->set_on_off(0);
 	  	  voc->o2->set_waveform(0);
-	  	  voc->o2->set_fcutoff(2600);
-	  	  voc->o2->set_resonance(-1.98);
 	  	  voc->o2->set_symm(0.5);
 	  	  voc->env_vol->setAttack(1);
 	  	  voc->env_vol->setDecay(1);

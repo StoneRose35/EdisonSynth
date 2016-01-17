@@ -6,81 +6,42 @@
 using namespace std;
 
 
-void sawtooth_wavetable_generator()
+/**
+ * the generated wavetable is three dimensional,
+ * the first dimension is note number with 0 being note 0 (27.5Hz) and 88 being note 88 (4434.92 Hz)
+ * the second dimension is symmetry with linear interpolation between 0.0 and 1.0 over 256 values
+ * the third dimension is time, each waveform contains 1024 samples.
+ * */
+
+
+short*** read_wavetable()
 {
-	double frequency;
-	double * waveform;
-	int harm_cnt;
-	ofstream wavetable;
-	double maximum;
-	double minimum;
-	unsigned short sample;
-	wavetable.open("saw.tab",ios::binary|ios::out);
-	for (int n=-48;n<40;n++)
+	short*** res2;
+	ifstream wt_in;
+	wt_in.open("wavess.tab",ios::binary|ios::in);
+	// initialize in wavetable
+	res2=new short**[88];
+	for(int k=0;k<88;k++)
 	{
-		frequency = 440.0*pow(pow(2.0,1.0/12.0),(double)n);
-		cout << "processing note: " << n << " having f: " << frequency << endl;
-		waveform = new double[SAMPLE_SIZE];
-		maximum=0.0;
-		minimum=0.0;
-		for(int k=0;k<SAMPLE_SIZE;k++)
+		res2[k]=new short*[256];
+		for(int l=0;l<256;l++)
 		{
-			waveform[k]=0;
-			harm_cnt=0;
-			while(frequency*(harm_cnt+1) < F_LIMIT)
-			{
-				waveform[k]+=1.0/(double)(harm_cnt+1)*sin((double)k*(double)(harm_cnt+1)/(double)SAMPLE_SIZE*2.0*M_PI);
-				harm_cnt++;
-			}
-			if(waveform[k]>maximum)
-			{
-				maximum = waveform[k];
-			}
-			if(waveform[k]<minimum)
-			{
-				minimum = waveform[k];
-			}
-		}
-		for(int u=0;u<SAMPLE_SIZE;u++)
-		{
-			waveform[u]=((waveform[u]-minimum)/(maximum - minimum))*65536.0;
-			sample = static_cast<unsigned short>(waveform[u]);
-			wavetable.write(reinterpret_cast<char*>( &sample ) ,sizeof(sample));
-		}
-
-	}
-	wavetable.close();
-}
-
-void sine_wavetable_generator()
-{
-	ofstream wavetable;
-	wavetable.open("sine.tab",ios::binary|ios::out);
-	short sample;
-	double minimum=0;
-	double maximum=0;
-	double *waveform;
-
-	waveform=(double*)malloc(SINE_SAMPLES*sizeof(double));
-	for (int z=0;z<SINE_SAMPLES; z++)
-	{
-		*(waveform + z)=sin(2.0*M_PI/(double)SINE_SAMPLES*(double)z);
-		if(*(waveform + z) < minimum)
-		{
-			minimum=*(waveform + z);
-		}
-
-		if(*(waveform + z) > maximum)
-		{
-			maximum=*(waveform + z);
+			res2[k][l]=new short[2048];
 		}
 	}
-
-	for(int u=0;u<SINE_SAMPLES;u++)
+	short bfrval;
+	// read in wavetable
+	for(int a=0;a<88;a++)
 	{
-		sample = static_cast<short>(waveform[u]*32767.0);
-		wavetable.write(reinterpret_cast<char*>( &sample ) ,sizeof(sample));
+		for(int b=0;b<256;b++)
+		{
+			for(int c=0;c<2048;c++)
+			{
+				wt_in.read(reinterpret_cast<char*>(&bfrval),sizeof(short));
+				res2[a][b][c]=bfrval;
+			}
+		}
 	}
-	free(waveform);
-	wavetable.close();
+	wt_in.close();
+	return res2;
 }

@@ -20,16 +20,21 @@ void Oscillator::set_waveform(int wf)
 	waveform=wf;
 }
 
-Oscillator::Oscillator()
+Oscillator::Oscillator(short*** wt)
 {
 	samples_to_interpolate=FRAMES_BUFFER;
 	interp_cntr=0;
 	current_phase=0;
-	current_frequency=0;
+	current_frequency=225;
 	current_symm=1.0;
-
-
-
+	frequency_1=225;
+	frequency_2=225;
+	symm1=1;
+	symm2=1;
+	coeffs_active=1;
+	waveform=1;
+	d_phase=(double)SINE_SAMPLES*current_frequency/(double)SAMPLING_RATE;
+	wavetable=wt;
 }
 
 
@@ -105,11 +110,17 @@ void Oscillator::set_symm(double s)
 	current_symm=s;
 }
 
+double Oscillator::getNote(double f)
+{
+	double res;
+	res = TWELVE_DIV_LOG2*(log(f) - LOG440);
+	return res;
+}
+
 double Oscillator::get_nextval()
 {
 
 	double sample_val=0;
-	double harm_coeff;
 
 
 	if(coeffs_active==1)
@@ -135,10 +146,48 @@ double Oscillator::get_nextval()
 
 	int phaseInt=(int)current_phase;
 
+	int fInt=(int)getNote(current_frequency)+48;
+
+	sample_val=wavetable[fInt][symmInt][phaseInt];
+
 
 	if(interp_cntr < samples_to_interpolate - 1)
 	{
 		interp_cntr++;
 	}
 	return sample_val;
+}
+
+void Oscillator::update(double symmetry,double frequency)
+{
+	if(coeffs_active==1)
+	{
+		symm2=symmetry;
+		frequency_2=frequency;
+		coeffs_active=2;
+	}
+	else
+	{
+		symm1=symmetry;
+		frequency_1=frequency;
+		coeffs_active=1;
+	}
+	interp_cntr=0;
+}
+
+void Oscillator::update(double frequency)
+{
+	if(coeffs_active==1)
+	{
+		symm2=symm1;
+		frequency_2=frequency;
+		coeffs_active=2;
+	}
+	else
+	{
+		symm1=symm2;
+		frequency_1=frequency;
+		coeffs_active=1;
+	}
+	interp_cntr=0;
 }

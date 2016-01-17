@@ -4,101 +4,27 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include "generators.h"
 
 #define N_BUFFERLOADS 2000
 
 using namespace std;
-
-/**
- * the generated wavetable is three dimensional,
- * the first dimension is note number with 0 being note 0 (27.5Hz) and 88 being note 88 (4434.92 Hz)
- * the second dimension is symmetry with linear interpolation between 0.0 and 1.0 over 256 values
- * the third dimension is time, each waveform contains 1024 samples.
- * */
-void generate_wavetable()
-{
-	ofstream wavetable;
-	wavetable.open("wavess.tab",ios::binary|ios::out);
-
-	short*** res;
-	short*** res2;
-	Voice* o=new Voice();
-
-
-	// initialize the wavetable
-	res=new short**[88];
-	for(int k=0;k<88;k++)
-	{
-		res[k]=new short*[256];
-		for(int l=0;l<256;l++)
-		{
-			res[k][l]=new short[2048];
-		}
-	}
-// fill it
-	for(int a=0;a<88;a++)
-	{
-		o->set_note(a);
-		for(int b=0;b<256;b++)
-		{
-			o->o1->set_symm((double)b/255.0);
-			o->update(1);
-			for(int c=0;c<2048;c++)
-			{
-				res[a][b][c]=static_cast<unsigned short>(o->o1->get_nextval()*32767);
-				wavetable.write(reinterpret_cast<char*>( &res[a][b][c] ) ,sizeof(res[a][b][c]));
-			}
-		}
-	}
-	wavetable.close();
-
-	ifstream wt_in;
-	wt_in.open("wavess.tab",ios::binary|ios::in);
-	// initialize in wavetable
-	res2=new short**[88];
-	for(int k=0;k<88;k++)
-	{
-		res2[k]=new short*[256];
-		for(int l=0;l<256;l++)
-		{
-			res2[k][l]=new short[2048];
-		}
-	}
-	short bfrval;
-	// read in wavetable
-	for(int a=0;a<88;a++)
-	{
-		for(int b=0;b<256;b++)
-		{
-			for(int c=0;c<2048;c++)
-			{
-				wt_in.read(reinterpret_cast<char*>(&bfrval),sizeof(short));
-				res2[a][b][c]=bfrval;
-				if(res2[a][b][c]!=res[a][b][c])
-				{
-					cout << "ERROR! Wavetable values are not equal" << endl;
-				}
-			}
-		}
-	}
-
-
-}
 
 
 
 #ifdef TESTING
 int main()
 {
-	/*
-	Voice* voc=new Voice();
+	short*** wt;
+	wt=read_wavetable();
+
+	wt[0][0][0];
+	Voice* voc=new Voice(wt);
 
 
 	char note=14;
   voc->set_note((int)note);
   voc->set_on_off(1);
-  voc->o2->set_fcutoff(2600);
-  voc->o2->set_resonance(-1.98);
   voc->o2->set_symm(0.01);
   voc->env_vol->setAttack(420);
   voc->env_vol->setDecay(1);
@@ -150,7 +76,6 @@ int main()
 	cout << "Results for sampling: Avg is: " << mean_sampling*(SAMPLING_RATE/1000)/FRAMES_BUFFER*100 << "% of time available " << endl;
 	cout << "Results for update: Average value: " << mean_update << " ms, standard deviation: " << stddev_update << " ms" << endl;
 	cout << "Results for update: Avg is: " << mean_update*(SAMPLING_RATE/1000)/FRAMES_BUFFER*100 << "% of time available " << endl;
-	*/
-	generate_wavetable();
+
 }
 #endif

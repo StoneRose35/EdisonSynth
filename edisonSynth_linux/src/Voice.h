@@ -12,7 +12,6 @@
 #ifndef VOICE_H_
 #define VOICE_H_
 
-#define TWO_TWROOT 1.059463094359295310
 
 class Voice
 {
@@ -35,7 +34,7 @@ public:
 	Envelope* env_div;
 	LFO* lfo1;
 	LFO* lfo2;
-	Voice();
+	Voice(short*** wt);
 	void set_note(int note);
 	short get_nextval();
 	void update(double delta_t);

@@ -8,9 +8,8 @@
 #ifndef GENERATORS_H_
 #define GENERATORS_H_
 
-void sawtooth_wavetable_generator();
+short*** read_wavetable();
 
-void sine_wavetable_generator();
 
 
 #endif /* GENERATORS_H_ */

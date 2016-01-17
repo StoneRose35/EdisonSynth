@@ -11,10 +11,10 @@
 
 using namespace std;
 
-Voice::Voice()
+Voice::Voice(short*** wt)
 {
-	o1=new Oscillator();
-	o2=new Oscillator();
+	o1=new Oscillator(wt);
+	o2=new Oscillator(wt);
 	lfo1=new LFO();
 	lfo2=new LFO();
 	env_vol = new Envelope();
@@ -26,11 +26,8 @@ Voice::Voice()
 	osc1_semitones=0;
 	osc2_semitones=0;
 	current_note=22;
-	// fill both coefficients buffers
-	o1->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc1_semitones)));
-	o2->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc2_semitones)));
-	o1->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc1_semitones)));
-	o2->recalc_coeffs(FRAMES_BUFFER,get_frequency((double)(current_note - 48 + osc2_semitones)));
+
+
 	is_on=0;
 	env_value1=0.0;
 	env_value2=0.0;
@@ -47,9 +44,9 @@ void Voice::set_note(int note)
 {
 	current_note=note;
 	double f = get_frequency((double)(current_note - 48 + osc1_semitones));
-	o1->recalc_coeffs(FRAMES_BUFFER,f);
+	o1->update(f);
 	f = get_frequency((double)(current_note - 48 + osc2_semitones));
-	o2->recalc_coeffs(FRAMES_BUFFER,f);
+	o2->update(f);
 }
 
 /*
@@ -100,33 +97,33 @@ void Voice::update(double delta_t)
 {
 	double eval;
 	double eval2;
-	//double lfo1val;
-	//double lfo2val;
+	double lfo1val;
+	double lfo2val;
 
 	// update all modulators (Evelopes, LFO's)
 	eval=env_vol->nextval(delta_t);
 	eval2=env_div->nextval(delta_t);
-	//lfo1val=lfo1->get_nextval(delta_t);
-	//lfo2val=lfo2->get_nextval(delta_t);
+	lfo1val=lfo1->get_nextval(delta_t);
+	lfo2val=lfo2->get_nextval(delta_t);
 
 	// set modulation matrix (which source goes to which target)
 
 	// set new oscillator properties (frequency, symmetry, filter q, filter f)
-    o1->set_fcutoff(240+get_frequency(eval2*24));
-	o2->set_fcutoff(140+get_frequency(eval2*24));
 	//o2->set_symm(lfo1val*0.1+0.5);
 
 	// calculator new oscillator coefficients
 	int n_samples;
 	n_samples=SAMPLING_RATE*delta_t;
-	o1->recalc_coeffs(n_samples,get_frequency((double)(current_note - 48 + osc1_semitones)));
-	o2->recalc_coeffs(n_samples,get_frequency((double)(current_note - 48 + osc2_semitones)));
+	o1->update(1.0,get_frequency((double)(current_note - 48 + osc2_semitones)));
+	o2->update(1.0,get_frequency((double)(current_note - 48 + osc2_semitones)));
+
 
 
 	if(param_set_active==1)
 	{
 		env_value2=eval;
 		param_set_active=2;
+
 	}
 	else
 	{
