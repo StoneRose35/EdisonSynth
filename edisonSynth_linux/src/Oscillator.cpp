@@ -57,10 +57,7 @@ Oscillator::Oscillator()
 
 void Oscillator::recalc_coeffs()
 {
-	double* coeffs2;
-	double* harm_killer;
 	double raw_val;
-	double f_harm;
 	double filter_coeff;
 	double sum_coeffs=0;
 	if(harm_coeffs1)
@@ -70,7 +67,6 @@ void Oscillator::recalc_coeffs()
 	harm_coeffs1=new double[512];
 	for(int ii=0;ii<512;ii++)
 	{
-		f_harm=current_frequency*ii;
 		//q=(1.0+(f_harm/f_cutoff)*(f_harm/f_cutoff));
 		filter_coeff = 1.0;// 1.0/sqrt(q*q*q*q + resonance*resonance -2*resonance*q*q*cos(4*atan(f_harm/f_cutoff)));
 		if(waveform==0) // square wave
@@ -112,23 +108,24 @@ double Oscillator::getNote(double f)
 	return res;
 }
 
-double Oscillator::get_nextval()
+short Oscillator::get_nextval()
 {
-
 	double sample_val=0;
+	double delta = (interp_cntr/samples_to_interpolate);
+
 
 
 	if(coeffs_active==1)
 	{
-		current_symm =  symm1 + (symm2-symm1)*((double)interp_cntr/(double)samples_to_interpolate);
-		current_frequency = frequency_1 - (frequency_2-frequency_1)*((double)interp_cntr/(double)samples_to_interpolate);
+		current_symm =  symm1 + (symm2-symm1)*delta;
+		current_frequency = frequency_1 - (frequency_2-frequency_1)*delta;
 	}
 	else
 	{
-		current_symm =  symm2 + (symm1-symm2)*((double)interp_cntr/(double)samples_to_interpolate);
-		current_frequency = frequency_2 - (frequency_1-frequency_2)*((double)interp_cntr/(double)samples_to_interpolate);
+		current_symm =  symm2 + (symm1-symm2)*delta;
+		current_frequency = frequency_2 - (frequency_1-frequency_2)*delta;
 	}
-	d_phase = (double)SINE_SAMPLES*current_frequency/(double)SAMPLING_RATE;
+	d_phase = SINE_SAMPLES*current_frequency/SAMPLING_RATE;
 
 	int symmInt=(int)(current_symm*255);
 
@@ -136,12 +133,12 @@ double Oscillator::get_nextval()
 
 	if(current_phase >= SINE_SAMPLES)
 	{
-		current_phase -= (double)SINE_SAMPLES;
+		current_phase -= SINE_SAMPLES;
 	}
 
-	int phaseInt=(int)current_phase;
+	int phaseInt=current_phase;
 
-	int fInt=(int)getNote(current_frequency)+48;
+	int fInt=current_frequency/20.0-1.0;
 
 	sample_val=wavetable[fInt][symmInt][phaseInt];
 

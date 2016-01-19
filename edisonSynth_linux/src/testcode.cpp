@@ -6,38 +6,82 @@
 #include <fstream>
 #include "generators.h"
 
-#define N_BUFFERLOADS 2000
+#define N_BUFFERLOADS 50000
 
 using namespace std;
 
+Voice* voc_test;
+char* buffer_test;
+struct sb_with_idx
+{
+	int index_start;
+	int index_end;
+	char* soundbuffer;
+};
+
+
+/**
+ * the callback function doing the sample calculation, basically mixes all active voices sound output together
+ * the places the values as short integers into the write buffer the passes them to also, which in turn does the rest of the
+ * magic...
+ * */
+int playback_callback()
+{
+
+
+
+	int size = FRAMES_BUFFER * 2 * N_CHANNELS;
+
+
+	// THREADED
+
+		short sample_val;
+		for( int j=0;j<size;j+=4)
+	  {
+		sample_val=voc_test->get_nextval();
+
+		for(int nc=0;nc<4;nc+=2)
+		{
+			*(buffer_test + j + nc) = sample_val & 0xff;
+			*(buffer_test + j + nc + 1) = (sample_val >> 8) & 0xff;
+		}
+
+	  }
+
+	return 0;
+}
 
 
 #ifdef TESTING
 int main()
 {
-
-	generate_wavetable();
-
+	//cout << "generating wavetable" << endl;
+	//generate_wavetable();
+	cout << "reading wavetable" << endl;
 	short*** wt;
 	wt=read_wavetable();
 
-	Voice* voc=new Voice(wt);
-
+	voc_test=new Voice(wt);
+	buffer_test = new char[FRAMES_BUFFER*4];
 
 	char note=14;
-  voc->set_note((int)note);
-  voc->set_on_off(1);
-  voc->o2->set_symm(0.01);
-  voc->env_vol->setAttack(420);
-  voc->env_vol->setDecay(1);
-  voc->env_vol->setSustain(1.0);
-  voc->env_vol->setRelease(420);
-  voc->env_div->setAttack(220);
-  voc->env_div->setDecay(45);
-  voc->env_div->setSustain(0.8);
-  voc->env_div->setRelease(420);
-  voc->lfo1->set_frequency(1.23);
+	voc_test->set_note((int)note);
+	voc_test->set_on_off(1);
+	voc_test->o2->set_symm(0.01);
+	voc_test->env_vol->setAttack(420);
+	voc_test->env_vol->setDecay(1);
+	voc_test->env_vol->setSustain(1.0);
+	voc_test->env_vol->setRelease(420);
+	voc_test->env_div->setAttack(220);
+	voc_test->env_div->setDecay(45);
+	voc_test->env_div->setSustain(0.8);
+	voc_test->env_div->setRelease(420);
+	voc_test->lfo1->set_frequency(1.23);
 
+
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	//voc->update(FRAMES_BUFFER/SAMPLING_RATE);
 
 	double samplingtimes[N_BUFFERLOADS];
@@ -47,15 +91,17 @@ int main()
 	for(cnt1=0;cnt1 < N_BUFFERLOADS;cnt1++)
 	{
 		int start=clock();
-		voc->update(FRAMES_BUFFER/SAMPLING_RATE);
+		voc_test->update(FRAMES_BUFFER/SAMPLING_RATE);
 		int stop1=clock();
 		updatetimes[cnt1]=(stop1-start)/double(CLOCKS_PER_SEC)*1000.0;
-		for(int cnt2=0;cnt2<FRAMES_BUFFER;cnt2++)
+		start=clock();
+		/*for(int cnt2=0;cnt2<FRAMES_BUFFER;cnt2++)
 		{
 			voc->get_nextval();
-		}
+		}*/
+		playback_callback();
 		int stop2=clock();
-		samplingtimes[cnt1]=(stop2-stop1)/double(CLOCKS_PER_SEC)*1000.0;
+		samplingtimes[cnt1]=(stop2-start)/double(CLOCKS_PER_SEC)*1000.0;
 	}
 	cout << " Performance Test finished, computing statistics " << endl;
 	double mean_sampling=0;

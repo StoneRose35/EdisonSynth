@@ -25,8 +25,8 @@ private:
 	double env_value1;
 	double env_value2;
 	char param_set_active; // either 1 or 2
-	int interp_cntr;
-	int samples_to_interpolate;
+	double interp_cntr;
+	double samples_to_interpolate;
 public:
 	Oscillator* o1;
 	Oscillator* o2;

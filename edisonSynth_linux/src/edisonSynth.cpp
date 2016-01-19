@@ -27,7 +27,12 @@ snd_pcm_sw_params_t *sw_params;
 Voice* voc;
 
 
-
+struct sb_with_idx
+{
+	int index_start;
+	int index_end;
+	char* soundbuffer;
+};
 
 /**
  * NOT USED, used the read the sine table
@@ -125,10 +130,14 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 {
 	int rc;
 	char *buffer;
-	    int size = nframes * 2 * N_CHANNELS;
-	      buffer = (char *) malloc(size);
 
-	    short sample_val;
+	struct sb_with_idx thread_data[2];
+	void * threadstatus;
+	int size = nframes * 2 * N_CHANNELS;
+	buffer = (char *) malloc(size);
+
+	short sample_val;
+
 
 
 	  	  for( int j=0;j<size;j+=4)
@@ -138,14 +147,11 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 	    	{
 	    		*(buffer + j + nc) = sample_val & 0xff;
 	    		*(buffer + j + nc + 1) = (sample_val >> 8) & 0xff;
-	    	//*(buffer + j + 3) = sample_val & 0xff;
-	    	//*(buffer + j + 4) = (sample_val >> 8) & 0xff;
 	    	}
 
 	  	  }
-	  	  //cout << " integer phase: " << intphase << ", table value: " << *(sinewave + intphase) << endl;
-		  //cout << " s val: " << sample_val << endl;
-	  	  //wave << sample_val << endl;
+
+
 	  	  rc = snd_pcm_writei(handle, buffer, nframes);
 		  if(rc==-EPIPE)
 		  {
@@ -308,7 +314,6 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 			//cout << double(time)/CLOCKS_PER_SEC*1000 << " of a max of " << (double)FRAMES_BUFFER/(double)SAMPLING_RATE*1000.0 << " ms elapsed" << endl;
 	  	  }
 
-	  	  //generate_sound2(params,handle);
 
 
 }

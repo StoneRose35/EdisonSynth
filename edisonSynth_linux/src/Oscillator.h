@@ -13,8 +13,8 @@ class Oscillator
 {
 private:
 	char coeffs_active; //1 or 2
-	int samples_to_interpolate; // for how many samples the coefficients should be interpolated;
-	int interp_cntr; // the interpolation counter, increases with each get_nextval(), is reset when recalc_coeffs() is called
+	double samples_to_interpolate; // for how many samples the coefficients should be interpolated;
+	double interp_cntr; // the interpolation counter, increases with each get_nextval(), is reset when recalc_coeffs() is called
 	double current_phase;
 	double current_frequency;
 	double frequency_1;
@@ -33,7 +33,7 @@ private:
 public:
 	Oscillator();
 	Oscillator(short*** wavetable);
-	double get_nextval();
+	short get_nextval();
 	short compute_nextval();
 	int get_waveform();
 	void set_waveform(int wf);

@@ -25,8 +25,8 @@ void generate_wavetable()
 
 
 	// initialize the wavetable
-	res=new short**[88];
-	for(int k=0;k<88;k++)
+	res=new short**[256];
+	for(int k=0;k<256;k++)
 	{
 		res[k]=new short*[256];
 		for(int l=0;l<256;l++)
@@ -35,11 +35,12 @@ void generate_wavetable()
 		}
 	}
 // fill it
-	for(int a=0;a<88;a++)
+	for(int a=0;a<256;a++)
 	{
 		for(int b=0;b<256;b++)
 		{
-			o->update((double)b/255,440.0*pow(TWO_TWROOT,a));
+			cout << "a: " << a << ",b: " << b << endl;
+			o->update((double)b/255,20.0+20.0*a);
 			o->recalc_coeffs();
 			for(int c=0;c<2048;c++)
 			{
@@ -65,8 +66,8 @@ short*** read_wavetable()
 	ifstream wt_in;
 	wt_in.open(WAVETABLE_FILENAME,ios::binary|ios::in);
 	// initialize in wavetable
-	res2=new short**[88];
-	for(int k=0;k<88;k++)
+	res2=new short**[256];
+	for(int k=0;k<256;k++)
 	{
 		res2[k]=new short*[256];
 		for(int l=0;l<256;l++)
@@ -76,7 +77,7 @@ short*** read_wavetable()
 	}
 	short bfrval;
 	// read in wavetable
-	for(int a=0;a<88;a++)
+	for(int a=0;a<256;a++)
 	{
 		for(int b=0;b<256;b++)
 		{

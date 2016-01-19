@@ -64,13 +64,14 @@ short Voice::get_nextval()
 	}
 	else
 	{
+		double delta = (interp_cntr/samples_to_interpolate);
 		if(param_set_active == 1 )
 		{
-			env_amt = env_value1 + (env_value2-env_value1)*((double)interp_cntr/(double)samples_to_interpolate);
+			env_amt = env_value1 + (env_value2-env_value1)*delta;
 		}
 		else
 		{
-			env_amt = env_value2 + (env_value1-env_value2)*((double)interp_cntr/(double)samples_to_interpolate);
+			env_amt = env_value2 + (env_value1-env_value2)*delta;
 		}
 		if(interp_cntr < samples_to_interpolate - 1)
 		{
@@ -78,8 +79,8 @@ short Voice::get_nextval()
 		}
 		result=o1->get_nextval()*osc1_amt;
 		result+= o2->get_nextval()*osc2_amt;
-		result*=env_amt;
-		return (short)(result*32767);
+		result*= env_amt;
+		return (short)result;
 	}
 
 }
@@ -101,8 +102,8 @@ void Voice::update(double delta_t)
 	double lfo2val;
 
 	// update all modulators (Evelopes, LFO's)
-	eval=env_vol->nextval(delta_t);
-	eval2=env_div->nextval(delta_t);
+	eval=env_vol->nextval(delta_t)*256;
+	eval2=env_div->nextval(delta_t)*256;
 	lfo1val=lfo1->get_nextval(delta_t);
 	lfo2val=lfo2->get_nextval(delta_t);
 
@@ -130,6 +131,7 @@ void Voice::update(double delta_t)
 		env_value1=eval;
 		param_set_active=1;
 	}
+	interp_cntr=0;
 }
 
 /**
