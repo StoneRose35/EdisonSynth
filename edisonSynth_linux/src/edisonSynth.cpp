@@ -179,8 +179,9 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  double t_total=0.0;
 	  double t_total_old=0.0;
 
-
+	  cout << "reading wavetable" << endl;
 	  wavetable=read_wavetable();
+	  cout << "done" << endl;
 	  voc=new Voice(wavetable);
 	  const char* snd_dev=read_config();
 	  rc=snd_pcm_open(&handle,snd_dev,SND_PCM_STREAM_PLAYBACK,0);

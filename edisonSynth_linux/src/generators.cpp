@@ -40,6 +40,8 @@ void generate_wavetable()
 		for(int b=0;b<256;b++)
 		{
 			cout << "a: " << a << ",b: " << b << endl;
+			// call update twice to set frequency1
+			o->update((double)b/255,20.0+20.0*a);
 			o->update((double)b/255,20.0+20.0*a);
 			o->recalc_coeffs();
 			for(int c=0;c<2048;c++)

@@ -8,6 +8,7 @@
 #include "Oscillator.h"
 #include "Envelope.h"
 #include "LFO.h"
+#include "Filter.h"
 
 #ifndef VOICE_H_
 #define VOICE_H_
@@ -34,6 +35,7 @@ public:
 	Envelope* env_div;
 	LFO* lfo1;
 	LFO* lfo2;
+	Filter* filter;
 	Voice(short*** wt);
 	void set_note(int note);
 	short get_nextval();

@@ -73,11 +73,11 @@ void Oscillator::recalc_coeffs()
 		{
 			if(ii==0)
 			{
-				raw_val = (((current_symm/2.0-0.5)*2.0)*filter_coeff);
+				raw_val = (((symm1/2.0-0.5)*2.0)*filter_coeff);
 			}
 			else
 			{
-				raw_val = ((4.0/M_PI*sin(M_PI*(double)ii*current_symm/2.0)/(double)ii))*filter_coeff;
+				raw_val = ((4.0/M_PI*sin(M_PI*(double)ii*symm1/2.0)/(double)ii))*filter_coeff;
 			}
 		}
 		else
@@ -88,7 +88,7 @@ void Oscillator::recalc_coeffs()
 			}
 			else
 			{
-				raw_val = ((-2.0*(pow(-1.0,(double)ii)*pow(2.0/current_symm,2.0))/((double)ii*(double)ii*(2.0/current_symm-1.0)*M_PI*M_PI)*sin(((double)ii*(2.0/current_symm-1.0)*M_PI)/(2.0/current_symm)))*filter_coeff);
+				raw_val = ((-2.0*(pow(-1.0,(double)ii)*pow(2.0/symm1,2.0))/((double)ii*(double)ii*(2.0/symm1-1.0)*M_PI*M_PI)*sin(((double)ii*(2.0/symm1-1.0)*M_PI)/(2.0/symm1)))*filter_coeff);
 			}
 		}
 		sum_coeffs+=raw_val*raw_val;
@@ -115,7 +115,7 @@ short Oscillator::get_nextval()
 
 
 
-	if(coeffs_active==1)
+	if(coeffs_active==2)
 	{
 		current_symm =  symm1 + (symm2-symm1)*delta;
 		current_frequency = frequency_1 - (frequency_2-frequency_1)*delta;
@@ -129,6 +129,7 @@ short Oscillator::get_nextval()
 
 	int symmInt=(int)(current_symm*255);
 
+	cout << " symmetry interpolator is: " << symmInt << endl;
 	current_phase+=d_phase;
 
 	if(current_phase >= SINE_SAMPLES)

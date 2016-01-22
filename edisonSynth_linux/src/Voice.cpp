@@ -19,8 +19,12 @@ Voice::Voice(short*** wt)
 	lfo2=new LFO();
 	env_vol = new Envelope();
 	env_div=new Envelope();
+	filter=new Filter();
+	filter->set_fcutoff(20000);
+	filter->set_res(0.0);
 	o1->set_waveform(0);
 	o2->set_waveform(1);
+	o2->set_symm(0.01);
 	osc1_amt = 0.0;
 	osc2_amt = 1.0;
 	osc1_semitones=0;
@@ -65,13 +69,13 @@ short Voice::get_nextval()
 	else
 	{
 		double delta = (interp_cntr/samples_to_interpolate);
-		if(param_set_active == 1 )
+		if(param_set_active == 2 )
 		{
-			env_amt = env_value1 + (env_value2-env_value1)*delta;
+			env_amt =  env_value1 + (env_value2-env_value1)*delta;
 		}
 		else
 		{
-			env_amt = env_value2 + (env_value1-env_value2)*delta;
+			env_amt =  env_value2 + (env_value1-env_value2)*delta;
 		}
 		if(interp_cntr < samples_to_interpolate - 1)
 		{
@@ -79,6 +83,7 @@ short Voice::get_nextval()
 		}
 		result=o1->get_nextval()*osc1_amt;
 		result+= o2->get_nextval()*osc2_amt;
+		result=filter->calc(result/32767)*32767;
 		result*= env_amt;
 		return (short)result;
 	}
@@ -102,8 +107,8 @@ void Voice::update(double delta_t)
 	double lfo2val;
 
 	// update all modulators (Evelopes, LFO's)
-	eval=env_vol->nextval(delta_t)*256;
-	eval2=env_div->nextval(delta_t)*256;
+	eval=env_vol->nextval(delta_t);
+	eval2=env_div->nextval(delta_t);
 	lfo1val=lfo1->get_nextval(delta_t);
 	lfo2val=lfo2->get_nextval(delta_t);
 
@@ -115,9 +120,9 @@ void Voice::update(double delta_t)
 	// calculator new oscillator coefficients
 	int n_samples;
 	n_samples=SAMPLING_RATE*delta_t;
-	o1->update(1.0,get_frequency((double)(current_note - 48 + osc2_semitones)));
-	o2->update(1.0,get_frequency((double)(current_note - 48 + osc2_semitones)));
-
+	o1->update(0.1,get_frequency((double)(current_note - 48 + osc1_semitones)));
+	o2->update(0.1,get_frequency((double)(current_note - 48 + osc2_semitones)));
+	filter->update(filter->get_fcutoff(),filter->get_res());
 
 
 	if(param_set_active==1)
