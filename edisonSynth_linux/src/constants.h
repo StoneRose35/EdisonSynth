@@ -24,7 +24,7 @@
 #define N_CHANNELS 2
 #define CONFIG_FILE "sound_dev.cfg"
 #define WAVETABLE_FILENAME 	"wavess.tab"
-
+#define N_VOICES 8
 
 /**
  * precomputed numbers

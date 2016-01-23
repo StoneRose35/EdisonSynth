@@ -25,7 +25,7 @@ snd_pcm_t *handle;
 snd_pcm_hw_params_t *params;
 snd_pcm_sw_params_t *sw_params;
 Voice* voc;
-
+Voice** vocs;
 
 struct sb_with_idx
 {
@@ -338,7 +338,11 @@ int main() {
 	wavetable.open("wave.txt",ios::out);
 	sine_wavetable_reader();
 */
+	vocs=new Voice*[N_VOICES];
+	for(int h=0;h<N_VOICE;h++)
+	{
 
+	}
 	// THIS STARTS THE SOUND!!
 	start_audio(handle,params,sw_params);
 

@@ -129,7 +129,6 @@ short Oscillator::get_nextval()
 
 	int symmInt=(int)(current_symm*255);
 
-	cout << " symmetry interpolator is: " << symmInt << endl;
 	current_phase+=d_phase;
 
 	if(current_phase >= SINE_SAMPLES)
