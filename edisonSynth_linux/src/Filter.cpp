@@ -36,11 +36,11 @@ double Filter::calc(double in)
 		p=p1 + (p2-p1)*delta;
 		r=r1 + (r2-r1)*delta;
 	}
-	x=in - r2*y4;
-	y1=x*p1 + oldx*p1 - k1*y1;
-	y2=y1*p1+oldy1*p1 - k1*y2;
-	y3=y2*p1+oldy2*p1 - k1*y3;
-	y4=y3*p1+oldy3*p1 - k1*y4;
+	x=in - r*y4;
+	y1=x*p + oldx*p - k*y1;
+	y2=y1*p+oldy1*p - k*y2;
+	y3=y2*p+oldy2*p - k*y3;
+	y4=y3*p+oldy3*p - k*y4;
 
 	y4 = y4 - (y4*y4*y4)/6.0;
 	oldx = x;
@@ -57,6 +57,14 @@ double Filter::calc(double in)
 
 void Filter::set_fcutoff(double fc)
 {
+	if(fc<20)
+	{
+		fc=20;
+	}
+	if(fc>20000)
+	{
+		fc=20000;
+	}
 	if(coeffs_active==1)
 	{
 		fcutoff=fc;
@@ -95,6 +103,14 @@ void Filter::update(double cutoff,double reson)
 }
 void Filter::set_res(double r)
 {
+	if(r>1)
+	{
+		r=1;
+	}
+	if(r < 0)
+	{
+		r=0;
+	}
 	res = r;
 	set_fcutoff(fcutoff);
 }

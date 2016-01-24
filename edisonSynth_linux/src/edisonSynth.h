@@ -8,7 +8,6 @@
 #ifndef EDISONSYNTH_H_
 #define EDISONSYNTH_H_
 
-
 double getFrequency(int notenumber);
 
 

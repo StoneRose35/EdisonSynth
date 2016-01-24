@@ -157,7 +157,6 @@ short Oscillator::compute_nextval()
 {
 	int harm_cntr=1;
 
-	int intphase;
 	double harm_phase;
 	double sample_val=0;
 	double harm_coeff;
@@ -176,7 +175,6 @@ short Oscillator::compute_nextval()
 	{
 
 			harm_coeff=harm_coeffs1[harm_cntr];
-		intphase=(int)harm_phase;
 
 		if(waveform==1)
 		{
@@ -210,6 +208,22 @@ short Oscillator::compute_nextval()
 
 void Oscillator::update(double symmetry,double frequency)
 {
+	if(symmetry > 1)
+	{
+		symmetry=1;
+	}
+	if(symmetry<0.01)
+	{
+		symmetry=0.01;
+	}
+	if(frequency < 20)
+	{
+		frequency=20;
+	}
+	if(frequency > 5120)
+	{
+		frequency=5120;
+	}
 	if(coeffs_active==1)
 	{
 		symm2=symmetry;

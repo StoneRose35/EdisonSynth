@@ -131,7 +131,7 @@ int main()
 	ofstream waveout;
 
 	short*** wt;
-	generate_wavetable();
+	//generate_wavetable();
 	cout << "reading wavetable" << endl;
 	wt=read_wavetable();
 	waveout.open("waveout.txt");

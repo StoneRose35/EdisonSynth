@@ -93,6 +93,7 @@ double currval=0;
 			return current_value;
 		}
 	}
+	return 0;
 }
 
 void Envelope::setAttack(double a)

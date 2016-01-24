@@ -13,6 +13,7 @@ using namespace std;
 
 Voice::Voice(short*** wt)
 {
+	// initialize subcomponents
 	o1=new Oscillator(wt);
 	o2=new Oscillator(wt);
 	lfo1=new LFO();
@@ -20,8 +21,8 @@ Voice::Voice(short*** wt)
 	env_vol = new Envelope();
 	env_div=new Envelope();
 	filter=new Filter();
-	filter->set_fcutoff(20000);
-	filter->set_res(0.0);
+
+
 	o1->set_waveform(0);
 	o2->set_waveform(1);
 	o2->set_symm(0.01);
@@ -32,12 +33,43 @@ Voice::Voice(short*** wt)
 	current_note=22;
 
 
+
+	// switch off and reset envelopes
 	is_on=0;
 	env_value1=0.0;
 	env_value2=0.0;
 	param_set_active=1;
 	samples_to_interpolate=FRAMES_BUFFER;
 	interp_cntr=0;
+
+	 lfo1_to_o1_frequency=0;
+	 lfo1_to_o2_frequency=0;
+	 lfo1_to_filter_cutoff=0;
+	 lfo1_to_filter_resonance=0;
+	 lfo1_to_o1_symm=0;
+	 lfo1_to_o2_symm=0;
+
+	 lfo2_to_o1_frequency=0;
+	 lfo2_to_o2_frequency=0;
+	 lfo2_to_filter_cutoff=0;
+	 lfo2_to_filter_resonance=0;
+	 lfo2_to_o1_symm=0;
+	 lfo2_to_o2_symm=0;
+
+	 envd_to_o1_frequency=0;
+	 envd_to_o2_frequency=0;
+	 envd_to_filter_cutoff=0;
+	 envd_to_filter_resonance=0;
+	 envd_to_o1_symm=0;
+	 envd_to_o2_symm=0;
+
+	 o1_symm_basis=0.1;
+	 o2_symm_basis=0.1;
+	 filter_cutoff_base=20000;
+	 filter_reso_base=0;
+
+	 pitchbend_value=0;
+	 pitchbend_amount=12;
 }
 
 
@@ -51,6 +83,16 @@ void Voice::set_note(int note)
 	o1->update(f);
 	f = get_frequency((double)(current_note - 48 + osc2_semitones));
 	o2->update(f);
+}
+
+int Voice::get_note()
+{
+	return current_note;
+}
+
+bool Voice::is_voice_on()
+{
+	return env_vol->isOn();
 }
 
 /*
@@ -106,6 +148,10 @@ void Voice::update(double delta_t)
 	double lfo1val;
 	double lfo2val;
 
+	double o_symm;
+	double o_freqoffset;
+	double f_f;
+	double f_r;
 	// update all modulators (Evelopes, LFO's)
 	eval=env_vol->nextval(delta_t);
 	eval2=env_div->nextval(delta_t);
@@ -113,16 +159,19 @@ void Voice::update(double delta_t)
 	lfo2val=lfo2->get_nextval(delta_t);
 
 	// set modulation matrix (which source goes to which target)
-
-	// set new oscillator properties (frequency, symmetry, filter q, filter f)
-	//o2->set_symm(lfo1val*0.1+0.5);
-
+	o_symm=o1_symm_basis + lfo1_to_o1_symm*lfo1val + lfo2_to_o1_symm*lfo2val + envd_to_o1_symm*eval2;
+	o_freqoffset=lfo1_to_o1_frequency*lfo1val + lfo2_to_o1_frequency*lfo1val + envd_to_o1_frequency*eval2;
 	// calculator new oscillator coefficients
-	int n_samples;
-	n_samples=SAMPLING_RATE*delta_t;
-	o1->update(0.1,get_frequency((double)(current_note - 48 + osc1_semitones)));
-	o2->update(0.1,get_frequency((double)(current_note - 48 + osc2_semitones)));
-	filter->update(filter->get_fcutoff(),filter->get_res());
+	//int n_samples;
+	//n_samples=SAMPLING_RATE*delta_t;
+	o1->update(o_symm,get_frequency((double)(current_note - 48 + osc1_semitones+o_freqoffset+pitchbend_value)));
+	o_symm=o2_symm_basis + lfo1_to_o2_symm*lfo1val + lfo2_to_o2_symm*lfo2val + envd_to_o2_symm*eval2;
+	o_freqoffset=lfo1_to_o2_frequency*lfo1val + lfo2_to_o2_frequency*lfo1val + envd_to_o2_frequency*eval2;
+	o2->update(o_symm,get_frequency((double)(current_note - 48 + osc2_semitones+o_freqoffset+pitchbend_value)));
+
+	f_f=filter_cutoff_base + lfo1_to_filter_cutoff*lfo1val + lfo2_to_filter_cutoff*lfo2val + envd_to_filter_cutoff*eval2;
+	f_r=filter_reso_base + lfo1_to_filter_resonance*lfo1val + lfo2_to_filter_resonance*lfo2val + envd_to_filter_resonance*eval2;
+	filter->update(f_f,f_r);
 
 
 	if(param_set_active==1)
@@ -185,4 +234,7 @@ void Voice::set_on_off(char on_off)
 }
 
 
-
+void Voice::set_pitchbend_value(int pb_midi)
+{
+	pitchbend_value=((double)(pb_midi-8192))/8192*pitchbend_amount;
+}

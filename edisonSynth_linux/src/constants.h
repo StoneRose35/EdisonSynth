@@ -38,7 +38,7 @@
 /*
  * Configuration constants for the build toolchain
  * */
-#define TESTING
+//#define TESTING
 
 
 #endif /* CONSTANTS_H_ */
