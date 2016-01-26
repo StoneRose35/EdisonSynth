@@ -49,14 +49,16 @@ char ** read_config()
 	getline(cfg_stream,str_res);
 
 	int sz = str_res.size();
-	result[0]=new char[sz];
+	result[0]=new char[sz+1];
 	str_res.copy(result[0],sz,0);
+	result[0][sz]='\0';
 
 	getline(cfg_stream,str_res);
 
 	sz = str_res.size();
-	result[1]=new char[sz];
+	result[1]=new char[sz+1];
 	str_res.copy(result[1],sz,0);
+	result[1][sz]='\0';
 	cfg_stream.close();
 	return result;
 }
@@ -237,11 +239,11 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  	  {
 	  	      cout << "Init: cannot prepare audio interface for use (" << snd_strerror (rc) << ")" << endl;
 	  	  }
-
+	  	  cout << "Synth Engine running!" << endl;
 	  	  while(1)
 	  	  {
 	  		rc = snd_pcm_wait (handle, 1000);
-	  		perfclock_start=clock();
+	  		//perfclock_start=clock();
 	  		if(rc < 0)
 	  		{
 	  			cout << "poll failed: " << snd_strerror(rc) << endl;
@@ -275,9 +277,9 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 			{
 				vocs[z]->update(delta_t);
 			}
-			perfclock_stop=clock();
-			cpu_percentage = (perfclock_stop-perfclock_start)/CLOCKS_PER_SEC*SAMPLING_RATE/FRAMES_BUFFER*100;
-			cout << "CPU load: " << cpu_percentage << "%" << endl;
+			//perfclock_stop=clock();
+			//cpu_percentage = (perfclock_stop-perfclock_start)/CLOCKS_PER_SEC*SAMPLING_RATE/FRAMES_BUFFER*100;
+			//cout << "CPU load: " << cpu_percentage << "%" << endl;
 	  	  }
 
 
