@@ -16,8 +16,9 @@
 
 using namespace std;
 
-Voice*** voices_for_midi;
+Voice ** voices_for_midi;
 snd_seq_t *seq_handle;
+pthread_t midi_controller_thread;
 
 snd_seq_t *open_seq(char* midi_dev ) {
 
@@ -37,7 +38,7 @@ snd_seq_t *open_seq(char* midi_dev ) {
   return(seq_handle);
 }
 
-void midi_action(snd_seq_t *seq_handle) {
+int midi_action(snd_seq_t *seq_handle) {
 
   snd_seq_event_t *ev;
   int noteval;
@@ -47,20 +48,22 @@ void midi_action(snd_seq_t *seq_handle) {
       case SND_SEQ_EVENT_CONTROLLER:
         break;
       case SND_SEQ_EVENT_PITCHBEND:
+    	  cout << "received pitch bend " << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
-    		  (*voices_for_midi)[h]->set_pitchbend_value(ev->data.control.value);
+    		  (*voices_for_midi + h)->set_pitchbend_value(ev->data.control.value);
     	  }
         break;
       case SND_SEQ_EVENT_NOTEON:
     	  noteval=ev->data.note.note;
     	  int idx_free_voice;
     	  idx_free_voice=-1;
+    	  cout << "received note on: " << noteval << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
-    		  if((*voices_for_midi)[h]->is_voice_on())
+    		  if((*voices_for_midi + h)->is_voice_on())
     		  {
-    			  if((*voices_for_midi)[h]->get_note()==noteval) // voice is taken
+    			  if((*voices_for_midi + h)->get_note()==noteval) // voice is taken
     			  {
     				  idx_free_voice=-1;
     				  break;
@@ -73,19 +76,20 @@ void midi_action(snd_seq_t *seq_handle) {
     	  }
     	  if(idx_free_voice>-1)
     	  {
-    		  (*voices_for_midi)[idx_free_voice]->set_note(noteval);
-    		  (*voices_for_midi)[idx_free_voice]->set_on_off(1);
+    		  (*voices_for_midi + idx_free_voice)->set_note(noteval);
+    		  (*voices_for_midi + idx_free_voice)->set_on_off(1);
     	  }
         break;
       case SND_SEQ_EVENT_NOTEOFF:
     	  noteval=ev->data.note.note;
     	  int idx_switch_off;
     	  idx_switch_off=-1;
+    	  cout << "received note off: " << noteval << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
-    		  if((*voices_for_midi)[h]->is_voice_on())
+    		  if((*voices_for_midi + h)->is_voice_on())
     		  {
-    			  if((*voices_for_midi)[h]->get_note()==noteval) // voice is taken
+    			  if((*voices_for_midi + h)->get_note()==noteval) // voice is taken
     			  {
     				  idx_switch_off=h;
     				  break;
@@ -94,12 +98,13 @@ void midi_action(snd_seq_t *seq_handle) {
     	  }
     	  if(idx_switch_off>-1)
     	  {
-    		  (*voices_for_midi)[idx_switch_off]->set_on_off(0);
+    		  (*voices_for_midi + idx_switch_off)->set_on_off(0);
     	  }
         break;
     }
     snd_seq_free_event(ev);
   } while (snd_seq_event_input_pending(seq_handle, 0) > 0);
+  return(0);
 }
 
 void* midi_thread_worker(void* args) {
@@ -107,21 +112,24 @@ void* midi_thread_worker(void* args) {
 
   int npfd;
   struct pollfd *pfd;
+  cout << "midi thread started " << endl;
   npfd = snd_seq_poll_descriptors_count(seq_handle, POLLIN);
   pfd = (struct pollfd *)alloca(npfd * sizeof(struct pollfd));
   snd_seq_poll_descriptors(seq_handle, pfd, npfd, POLLIN);
+  cout << "polling " << endl;
   while (1) {
-    if (poll(pfd, npfd, 100000) > 0) {
+    if (poll(pfd, npfd, -1) > 0) {
       midi_action(seq_handle);
     }
   }
   return NULL;
 }
 
-void init_midi_controller(Voice*** vocs_addr,char* midi_dev)
+snd_seq_t * init_midi_controller(Voice** vocs_addr,char* midi_dev)
 {
-	pthread_t midi_controller_thread;
+
 	int err;
+	cout << "initializing midi" << endl;
 	voices_for_midi=vocs_addr;
 	open_seq(midi_dev);
 	err=pthread_create(&midi_controller_thread,NULL,&midi_thread_worker,NULL);
@@ -129,6 +137,6 @@ void init_midi_controller(Voice*** vocs_addr,char* midi_dev)
 	{
 		cout << "midi controller init error: thread creation not possible" << endl;
 	}
-
+	return seq_handle;
 
 }

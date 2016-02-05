@@ -28,7 +28,9 @@ snd_pcm_t *handle;
 snd_pcm_hw_params_t *params;
 snd_pcm_sw_params_t *sw_params;
 Voice * vocs[N_VOICES];
+short*** wt;
 char ** config;
+snd_seq_t * seq_handle1;
 
 
 
@@ -113,6 +115,20 @@ void printIfError(int rc)
 }
 
 
+void init_voices()
+{
+	  cout << "reading wavetable" << endl;
+	  wt=read_wavetable();
+	  cout << "done" << endl;
+	  cout << "initializing voices" << endl;
+	  Voice * voc;
+	  for(int h=0;h<N_VOICES;h++)
+	  {
+		voc=new Voice(wt);
+		vocs[h]=voc;
+	  }
+}
+
 /**
  * the callback function doing the sample calculation, basically mixes all active voices sound output together
  * the places the values as short integers into the write buffer the passes them to also, which in turn does the rest of the
@@ -146,6 +162,7 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 
 
 	  	  rc = snd_pcm_writei(handle, buffer, nframes);
+	  	  /*
 		  if(rc==-EPIPE)
 		  {
 			  cout << "der Puffer ist leergelaufen" << endl;
@@ -153,7 +170,7 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 		  else if (rc < 0)
 		  {
 			  cout << " error from writei " << snd_strerror(rc) << endl;
-		  }
+		  }*/
 	return rc;
 }
 
@@ -165,24 +182,18 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params_t *sw_params)
 {
 	  int rc;
-	  short*** wavetable;
 	  unsigned int val=SAMPLING_RATE;
-	  snd_pcm_sframes_t frames_to_deliver;
 	  double delta_t;
 	  double t_total=0.0;
 	  int perfclock_start;
 	  int perfclock_stop;
 	  double cpu_percentage;
-	  cout << "reading wavetable" << endl;
-	  wavetable=read_wavetable();
-	  cout << "done" << endl;
-	  cout << "initializing voices" << endl;
-	  Voice * voc;
-	  for(int h=0;h<N_VOICES;h++)
-	  {
-		voc=new Voice(wavetable);
-		vocs[h]=voc;
-	  }
+
+	  int nfds;
+	  int seq_nfds;
+	  pollfd* pfds;
+	  int l1;
+
 	  const char* snd_dev=config[0];
 	  rc=snd_pcm_open(&handle,snd_dev,SND_PCM_STREAM_PLAYBACK,0);
 	  printIfError(rc);
@@ -239,44 +250,45 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  	  {
 	  	      cout << "Init: cannot prepare audio interface for use (" << snd_strerror (rc) << ")" << endl;
 	  	  }
+
+
+	  	  //prepare poll descriptors
+	  	   seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
+	  	   nfds = snd_pcm_poll_descriptors_count (handle);
+	  	   pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (seq_nfds + nfds));
+	  	   snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
+	  	   snd_pcm_poll_descriptors (handle, pfds+seq_nfds, nfds);
+
 	  	  cout << "Synth Engine running!" << endl;
 	  	  while(1)
 	  	  {
-	  		rc = snd_pcm_wait (handle, 1000);
-	  		//perfclock_start=clock();
-	  		if(rc < 0)
-	  		{
-	  			cout << "poll failed: " << snd_strerror(rc) << endl;
-	  			break; // kills the audio
-	  		}
 
-	  		if ((frames_to_deliver = snd_pcm_avail_update (handle)) < 0) {
-				if (frames_to_deliver == -EPIPE) {
-					cout << "an xrun occured\n" << endl;
-					break;
-				} else {
-					cout << "unknown ALSA avail update return value \n" << frames_to_deliver << endl;
-					break;
+
+
+
+	  		if (poll (pfds, seq_nfds + nfds, 1000) > 0) {
+				for (l1 = 0; l1 < seq_nfds; l1++) {
+				   if (pfds[l1].revents > 0) midi_action(seq_handle1);
 				}
+				for (l1 = seq_nfds; l1 < seq_nfds + nfds; l1++) {
+					if (pfds[l1].revents > 0) {
+						if (playback_callback(handle,FRAMES_BUFFER) < FRAMES_BUFFER) {
+							fprintf (stderr, "buffer underrun, try increasing the buffer size !\n");
+							snd_pcm_prepare(handle);
+						}
+					}
+				}
+
+				delta_t=(double)FRAMES_BUFFER / (double)SAMPLING_RATE;
+				t_total+=delta_t;
+
+				for(int z=0;z<N_VOICES;z++)
+				{
+					vocs[z]->update(delta_t);
+				}
+
 			}
 
-			frames_to_deliver = frames_to_deliver > FRAMES_BUFFER ? FRAMES_BUFFER : frames_to_deliver;
-
-			/* deliver the data */
-			if (playback_callback (handle,frames_to_deliver) != frames_to_deliver) {
-					fprintf (stderr, "playback callback failed\n");
-				break;
-			}
-
-			delta_t=(double)frames_to_deliver / (double)SAMPLING_RATE;
-
-
-			t_total+=delta_t;
-
-			for(int z=0;z<N_VOICES;z++)
-			{
-				vocs[z]->update(delta_t);
-			}
 			//perfclock_stop=clock();
 			//cpu_percentage = (perfclock_stop-perfclock_start)/CLOCKS_PER_SEC*SAMPLING_RATE/FRAMES_BUFFER*100;
 			//cout << "CPU load: " << cpu_percentage << "%" << endl;
@@ -302,10 +314,14 @@ double getFrequency(double notenumber)
 int main() {
 	// read configuration file
 	config=read_config();
+
+	//initialize the voices
+	init_voices();
+
 	// initialize thread handling midi
-	//init_midi_controller(&vocs,config[1]);
+	seq_handle1 = init_midi_controller(vocs,config[1]);
 	// THIS STARTS THE SOUND!!
-	start_audio(handle,params,sw_params);
+	//start_audio(handle,params,sw_params);
 
 	return 0;
 }
