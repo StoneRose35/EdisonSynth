@@ -140,11 +140,11 @@ int main()
 	buffer_test = new char[FRAMES_BUFFER*4];
 
 	int cnt2=0;
-	char note=30;
+	char note=62;
 	voc_test->set_note((int)note);
 	voc_test->set_on_off(1);
-	voc_test->o2->set_symm(0.1);
-	voc_test->env_vol->setAttack(42);
+	/*voc_test->o2->set_symm(0.1);
+	voc_test->env_vol->setAttack(0);
 	voc_test->env_vol->setDecay(1);
 	voc_test->env_vol->setSustain(1.0);
 	voc_test->env_vol->setRelease(420);
@@ -154,7 +154,7 @@ int main()
 	voc_test->env_div->setRelease(420);
 	voc_test->lfo1->set_frequency(1.23);
 	voc_test->filter->set_fcutoff(5000.0);
-	voc_test->filter->set_res(0.6);
+	voc_test->filter->set_res(0.6);*/
 	voc_test->update(0.00533333);
 	for(int r=0;r<2048;r++)
 	{

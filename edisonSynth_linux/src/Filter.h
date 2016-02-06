@@ -39,7 +39,6 @@ private:
 
 public:
 	Filter();
-	void init();
 	void set_fcutoff(double fc);
 	double get_fcutoff();
 	void set_res(double r);

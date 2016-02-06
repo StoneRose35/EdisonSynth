@@ -46,7 +46,7 @@ void generate_wavetable()
 			o->recalc_coeffs();
 			for(int c=0;c<2048;c++)
 			{
-				res[a][b][c]=static_cast<unsigned short>(o->compute_nextval());
+				res[a][b][c]=static_cast<short>(o->compute_nextval());
 				wavetable.write(reinterpret_cast<char*>( &res[a][b][c] ) ,sizeof(res[a][b][c]));
 			}
 		}
@@ -66,30 +66,39 @@ short*** read_wavetable()
 {
 	short*** res2;
 	ifstream wt_in;
+	short * arraybfr=new short[2048];
 	wt_in.open(WAVETABLE_FILENAME,ios::binary|ios::in);
 	// initialize in wavetable
 	res2=new short**[256];
 	for(int k=0;k<256;k++)
 	{
 		res2[k]=new short*[256];
-		for(int l=0;l<256;l++)
+		/*for(int l=0;l<256;l++)
 		{
 			res2[k][l]=new short[2048];
-		}
+		}*/
 	}
 	short bfrval;
 	// read in wavetable
+
 	for(int a=0;a<256;a++)
 	{
 		for(int b=0;b<256;b++)
 		{
+			arraybfr=new short[2048];
+			wt_in.read(reinterpret_cast<char*>(arraybfr),2048*sizeof(short));
+			res2[a][b]=arraybfr;
+			/*
 			for(int c=0;c<2048;c++)
 			{
 				wt_in.read(reinterpret_cast<char*>(&bfrval),sizeof(short));
 				res2[a][b][c]=bfrval;
-			}
+			}*/
 		}
 	}
+
+	//wt_in.read(reinterpret_cast<char*>(res2[0]),256*256*2048*sizeof(short));
+	//delete arraybfr;
 	wt_in.close();
 	return res2;
 }

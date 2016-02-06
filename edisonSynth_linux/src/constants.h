@@ -20,7 +20,7 @@
 #define N_NOTES 88
 #define SINE_SAMPLES 2048 //16384
 #define SINE_SAMPLES_4 4096
-#define FRAMES_BUFFER 256
+#define FRAMES_BUFFER 128
 #define N_CHANNELS 2
 #define CONFIG_FILE "sound_dev.cfg"
 #define WAVETABLE_FILENAME 	"wavess.tab"

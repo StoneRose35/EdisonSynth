@@ -33,7 +33,6 @@ Voice::Voice(short*** wt)
 	current_note=22;
 
 
-
 	// switch off and reset envelopes
 	is_on=0;
 	env_value1=0.0;
@@ -65,8 +64,8 @@ Voice::Voice(short*** wt)
 
 	 o1_symm_basis=0.1;
 	 o2_symm_basis=0.1;
-	 filter_cutoff_base=20000;
-	 filter_reso_base=0;
+	 filter_cutoff_base=600;
+	 filter_reso_base=0.7;
 
 	 pitchbend_value=0;
 	 pitchbend_amount=12;
@@ -127,6 +126,7 @@ short Voice::get_nextval()
 		result+= o2->get_nextval()*osc2_amt;
 		result=filter->calc(result/32767)*32767;
 		result*= env_amt;
+		//cout << result << endl;
 		return (short)result;
 	}
 

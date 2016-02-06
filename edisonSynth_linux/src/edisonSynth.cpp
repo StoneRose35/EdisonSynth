@@ -32,6 +32,7 @@ short*** wt;
 char ** config;
 snd_seq_t * seq_handle1;
 
+int test_cntr;
 
 
 /*
@@ -42,13 +43,18 @@ char ** read_config()
 {
 	char** result;
 
-	result=new char*[2];
+	result=new char*[4];
 
 	ifstream cfg_stream;
 	streampos fsize;
 	string str_res;
 	cfg_stream.open(CONFIG_FILE);
+
 	getline(cfg_stream,str_res);
+	while(str_res.substr(0,1)=="#")
+	{
+		getline(cfg_stream,str_res);
+	}
 
 	int sz = str_res.size();
 	result[0]=new char[sz+1];
@@ -56,11 +62,38 @@ char ** read_config()
 	result[0][sz]='\0';
 
 	getline(cfg_stream,str_res);
+	while(str_res.substr(0,1)=="#")
+	{
+		getline(cfg_stream,str_res);
+	}
 
 	sz = str_res.size();
 	result[1]=new char[sz+1];
 	str_res.copy(result[1],sz,0);
 	result[1][sz]='\0';
+
+	getline(cfg_stream,str_res);
+	while(str_res.substr(0,1)=="#")
+	{
+		getline(cfg_stream,str_res);
+	}
+
+	sz = str_res.size();
+	result[2]=new char[sz+1];
+	str_res.copy(result[2],sz,0);
+	result[2][sz]='\0';
+
+	getline(cfg_stream,str_res);
+	while(str_res.substr(0,1)=="#")
+	{
+		getline(cfg_stream,str_res);
+	}
+
+	sz = str_res.size();
+	result[3]=new char[sz+1];
+	str_res.copy(result[3],sz,0);
+	result[3][sz]='\0';
+
 	cfg_stream.close();
 	return result;
 }
@@ -118,8 +151,10 @@ void printIfError(int rc)
 void init_voices()
 {
 	  cout << "reading wavetable" << endl;
+	  int start=clock();
 	  wt=read_wavetable();
-	  cout << "done" << endl;
+	  int stop=clock();
+	  cout << "done, took " << ((double)(stop-start)/CLOCKS_PER_SEC)*1000 << " ms " << endl;
 	  cout << "initializing voices" << endl;
 	  Voice * voc;
 	  for(int h=0;h<N_VOICES;h++)
@@ -127,6 +162,7 @@ void init_voices()
 		voc=new Voice(wt);
 		vocs[h]=voc;
 	  }
+	  cout << "done!" << endl;
 }
 
 /**
@@ -148,10 +184,13 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 
 	  	  for( int j=0;j<size;j+=4)
 	  	  {
+	  		sample_val=0;
 	  		for (int h=0;h<N_VOICES;h++)
 	  		{
 	  			sample_val+=vocs[h]->get_nextval()/N_VOICES;
 	  		}
+
+	  		//sample_val=32767*sin(230/(double)SAMPLING_RATE*2*M_PI*test_cntr++);
 	    	for(int nc=0;nc<N_CHANNELS*2;nc+=2)
 	    	{
 	    		*(buffer + j + nc) = sample_val & 0xff;
@@ -162,15 +201,6 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 
 
 	  	  rc = snd_pcm_writei(handle, buffer, nframes);
-	  	  /*
-		  if(rc==-EPIPE)
-		  {
-			  cout << "der Puffer ist leergelaufen" << endl;
-		  }
-		  else if (rc < 0)
-		  {
-			  cout << " error from writei " << snd_strerror(rc) << endl;
-		  }*/
 	return rc;
 }
 
@@ -312,6 +342,8 @@ double getFrequency(double notenumber)
 
 #ifndef TESTING
 int main() {
+
+	test_cntr=0;
 	// read configuration file
 	config=read_config();
 
@@ -319,9 +351,10 @@ int main() {
 	init_voices();
 
 	// initialize thread handling midi
-	seq_handle1 = init_midi_controller(vocs,config[1]);
+	seq_handle1 = init_midi_controller(vocs,config);
+
 	// THIS STARTS THE SOUND!!
-	//start_audio(handle,params,sw_params);
+	start_audio(handle,params,sw_params);
 
 	return 0;
 }

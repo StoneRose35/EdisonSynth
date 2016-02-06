@@ -48,10 +48,10 @@ int midi_action(snd_seq_t *seq_handle) {
       case SND_SEQ_EVENT_CONTROLLER:
         break;
       case SND_SEQ_EVENT_PITCHBEND:
-    	  cout << "received pitch bend " << endl;
+    	  //cout << "received pitch bend " << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
-    		  (*voices_for_midi + h)->set_pitchbend_value(ev->data.control.value);
+    		  voices_for_midi[h]->set_pitchbend_value(ev->data.control.value);
     	  }
         break;
       case SND_SEQ_EVENT_NOTEON:
@@ -61,9 +61,9 @@ int midi_action(snd_seq_t *seq_handle) {
     	  cout << "received note on: " << noteval << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
-    		  if((*voices_for_midi + h)->is_voice_on())
+    		  if(voices_for_midi[h]->is_voice_on())
     		  {
-    			  if((*voices_for_midi + h)->get_note()==noteval) // voice is taken
+    			  if(voices_for_midi[h]->get_note()==noteval) // voice is taken
     			  {
     				  idx_free_voice=-1;
     				  break;
@@ -76,20 +76,20 @@ int midi_action(snd_seq_t *seq_handle) {
     	  }
     	  if(idx_free_voice>-1)
     	  {
-    		  (*voices_for_midi + idx_free_voice)->set_note(noteval);
-    		  (*voices_for_midi + idx_free_voice)->set_on_off(1);
+    		  voices_for_midi[idx_free_voice]->set_note(noteval);
+    		  voices_for_midi[idx_free_voice]->set_on_off(1);
     	  }
         break;
       case SND_SEQ_EVENT_NOTEOFF:
     	  noteval=ev->data.note.note;
     	  int idx_switch_off;
     	  idx_switch_off=-1;
-    	  cout << "received note off: " << noteval << endl;
+    	  //cout << "received note off: " << noteval << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
-    		  if((*voices_for_midi + h)->is_voice_on())
+    		  if(voices_for_midi[h]->is_voice_on())
     		  {
-    			  if((*voices_for_midi + h)->get_note()==noteval) // voice is taken
+    			  if(voices_for_midi[h]->get_note()==noteval) // voice is taken
     			  {
     				  idx_switch_off=h;
     				  break;
@@ -98,7 +98,7 @@ int midi_action(snd_seq_t *seq_handle) {
     	  }
     	  if(idx_switch_off>-1)
     	  {
-    		  (*voices_for_midi + idx_switch_off)->set_on_off(0);
+    		  voices_for_midi[idx_switch_off]->set_on_off(0);
     	  }
         break;
     }
@@ -125,18 +125,34 @@ void* midi_thread_worker(void* args) {
   return NULL;
 }
 
-snd_seq_t * init_midi_controller(Voice** vocs_addr,char* midi_dev)
-{
-
+snd_seq_t * init_midi_controller(Voice** vocs_addr,char** midi_cfg)
+	{
 	int err;
 	cout << "initializing midi" << endl;
 	voices_for_midi=vocs_addr;
-	open_seq(midi_dev);
-	err=pthread_create(&midi_controller_thread,NULL,&midi_thread_worker,NULL);
-	if(err!=0)
-	{
-		cout << "midi controller init error: thread creation not possible" << endl;
-	}
+	open_seq(midi_cfg[1]);
+	//err=pthread_create(&midi_controller_thread,NULL,&midi_thread_worker,NULL);
+	//if(err!=0)
+	//{
+	//	cout << "midi controller init error: thread creation not possible" << endl;
+	//}
+
+
+	/* connect keyboard to port just created*/
+    snd_seq_addr_t sender, dest;
+    snd_seq_port_subscribe_t *subs;
+    sender.client =  (unsigned char)atoi(midi_cfg[2]);
+    sender.port = 0;
+    dest.client = (unsigned char)atoi(midi_cfg[3]);
+    dest.port = 0;
+    snd_seq_port_subscribe_alloca(&subs);
+    snd_seq_port_subscribe_set_sender(subs, &sender);
+    snd_seq_port_subscribe_set_dest(subs, &dest);
+    snd_seq_port_subscribe_set_queue(subs, 1);
+    snd_seq_port_subscribe_set_time_update(subs, 1);
+    snd_seq_port_subscribe_set_time_real(subs, 1);
+    snd_seq_subscribe_port(seq_handle, subs);
+
 	return seq_handle;
 
 }
