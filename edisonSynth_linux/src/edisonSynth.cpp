@@ -31,10 +31,11 @@ Voice * vocs[N_VOICES];
 short*** wt;
 char ** config;
 snd_seq_t * seq_handle1;
+char* buffer;
+char engine_running;
+pthread_t shutdown_thread;
 
 int test_cntr;
-
-
 /*
  * reads the config file containing the alsa audio device name in the first line
  * and the alsa midi device in te second line
@@ -173,10 +174,8 @@ void init_voices()
 int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 {
 	int rc;
-	char *buffer;
 
 	int size = nframes * 2 * N_CHANNELS;
-	buffer = (char *) malloc(size);
 
 	short sample_val=0;
 
@@ -185,6 +184,7 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 	  	  for( int j=0;j<size;j+=4)
 	  	  {
 	  		sample_val=0;
+
 	  		for (int h=0;h<N_VOICES;h++)
 	  		{
 	  			sample_val+=vocs[h]->get_nextval()/N_VOICES;
@@ -198,10 +198,33 @@ int playback_callback(snd_pcm_t* handle,snd_pcm_sframes_t nframes)
 	    	}
 
 	  	  }
+	rc = snd_pcm_writei(handle, buffer, nframes);
 
+	double delta_t=(double)FRAMES_BUFFER / (double)SAMPLING_RATE;
 
-	  	  rc = snd_pcm_writei(handle, buffer, nframes);
+	for(int z=0;z<N_VOICES;z++)
+	{
+		vocs[z]->update(delta_t);
+	}
+
 	return rc;
+}
+
+void* stop_synth(void* args)
+{
+	char answer[16];
+	while(1)
+	{
+		cout << "enter \"q\" to stop the synth" << endl;
+		cin >> answer;
+		if(answer[0]=='q')
+		{
+			engine_running=0;
+			break;
+		}
+
+	}
+		return NULL;
 }
 
 /**
@@ -223,6 +246,9 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  int seq_nfds;
 	  pollfd* pfds;
 	  int l1;
+
+
+	  test_cntr=0;
 
 	  const char* snd_dev=config[0];
 	  rc=snd_pcm_open(&handle,snd_dev,SND_PCM_STREAM_PLAYBACK,0);
@@ -281,6 +307,7 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  	      cout << "Init: cannot prepare audio interface for use (" << snd_strerror (rc) << ")" << endl;
 	  	  }
 
+	  	  buffer = (char *) malloc(FRAMES_BUFFER*N_CHANNELS*2);
 
 	  	  //prepare poll descriptors
 	  	   seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
@@ -289,10 +316,11 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  	   snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
 	  	   snd_pcm_poll_descriptors (handle, pfds+seq_nfds, nfds);
 
+	  	   engine_running = 1;
 	  	  cout << "Synth Engine running!" << endl;
-	  	  while(1)
-	  	  {
 
+	  	  while(engine_running==1)
+	  	  {
 
 
 
@@ -308,15 +336,6 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 						}
 					}
 				}
-
-				delta_t=(double)FRAMES_BUFFER / (double)SAMPLING_RATE;
-				t_total+=delta_t;
-
-				for(int z=0;z<N_VOICES;z++)
-				{
-					vocs[z]->update(delta_t);
-				}
-
 			}
 
 			//perfclock_stop=clock();
@@ -324,7 +343,9 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 			//cout << "CPU load: " << cpu_percentage << "%" << endl;
 	  	  }
 
-
+	      snd_pcm_close (handle);
+	      snd_seq_close (seq_handle1);
+	      free(buffer);
 
 }
 
@@ -343,7 +364,7 @@ double getFrequency(double notenumber)
 #ifndef TESTING
 int main() {
 
-	test_cntr=0;
+	int err;
 	// read configuration file
 	config=read_config();
 
@@ -353,8 +374,17 @@ int main() {
 	// initialize thread handling midi
 	seq_handle1 = init_midi_controller(vocs,config);
 
+	// start the thread used to shut down the engine properly
+	err = pthread_create(&shutdown_thread,NULL,&stop_synth,NULL);
+	if(err!=0)
+	{
+		cout << " error creating monitoring thread " << endl;
+	}
+
 	// THIS STARTS THE SOUND!!
 	start_audio(handle,params,sw_params);
+
+
 
 	return 0;
 }

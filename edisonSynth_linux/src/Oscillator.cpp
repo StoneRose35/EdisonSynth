@@ -118,12 +118,12 @@ short Oscillator::get_nextval()
 	if(coeffs_active==2)
 	{
 		current_symm =  symm1 + (symm2-symm1)*delta;
-		current_frequency = frequency_1 - (frequency_2-frequency_1)*delta;
+		current_frequency = frequency_1 + (frequency_2-frequency_1)*delta;
 	}
 	else
 	{
 		current_symm =  symm2 + (symm1-symm2)*delta;
-		current_frequency = frequency_2 - (frequency_1-frequency_2)*delta;
+		current_frequency = frequency_2 + (frequency_1-frequency_2)*delta;
 	}
 	d_phase = SINE_SAMPLES*current_frequency/SAMPLING_RATE;
 
@@ -139,9 +139,26 @@ short Oscillator::get_nextval()
 	int phaseInt=current_phase;
 
 	int fInt=current_frequency/20.0-1.0;
-
+/*
+	if(fInt < 0)
+	{
+		fInt=0;
+	}
+	if(fInt>255)
+	{
+		fInt=255;
+	}
+	if(symmInt<0)
+	{
+		symmInt=0;
+	}
+	if(symmInt>255)
+	{
+		symmInt=255;
+	}*/
 	sample_val=wavetable[fInt][symmInt][phaseInt];
 
+//	cout << "sample at [" << fInt << "][" << symmInt << "][" << phaseInt << "]: " << sample_val << endl;
 
 	if(interp_cntr < samples_to_interpolate - 1)
 	{
@@ -153,7 +170,7 @@ short Oscillator::get_nextval()
 /**
  * used only for the generation of the wavetable
  */
-short Oscillator::compute_nextval()
+double Oscillator::compute_nextval()
 {
 	int harm_cntr=1;
 
@@ -203,7 +220,7 @@ short Oscillator::compute_nextval()
 	{
 		interp_cntr++;
 	}
-	return (short)(sample_val*32767);
+	return sample_val;
 }
 
 void Oscillator::update(double symmetry,double frequency)

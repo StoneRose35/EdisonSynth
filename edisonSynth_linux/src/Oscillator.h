@@ -34,7 +34,7 @@ public:
 	Oscillator();
 	Oscillator(short*** wavetable);
 	short get_nextval();
-	short compute_nextval();
+	double compute_nextval();
 	int get_waveform();
 	void set_waveform(int wf);
 	void reset();

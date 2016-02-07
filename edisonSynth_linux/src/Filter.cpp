@@ -16,6 +16,9 @@ Filter::Filter() {
 	fcutoff=20000;
 	res=0;
 	y1=y2=y3=oldx=oldy1=oldy2=oldy3=0;
+	samples_to_interpolate=FRAMES_BUFFER;
+	update(fcutoff,res);
+	update(fcutoff,res);
 	calc(0.0);
 }
 
@@ -36,6 +39,7 @@ double Filter::calc(double in)
 		p=p1 + (p2-p1)*delta;
 		r=r1 + (r2-r1)*delta;
 	}
+
 	x=in - r*y4;
 	y1=x*p + oldx*p - k*y1;
 	y2=y1*p+oldy1*p - k*y2;
@@ -50,6 +54,12 @@ double Filter::calc(double in)
 	if(interp_cntr < samples_to_interpolate-1)
 	{
 		interp_cntr++;
+	}
+	if(isnan(y4))
+	{
+		//cout << " filter fail, input is: " << in << endl;
+		y4=0;
+		y1=y2=y3=oldx=oldy1=oldy2=oldy3=0;
 	}
 	//cout << "in: " << in << ", y1: " << y1 << ", y2: " << y2 << ", y3: " << y3 << ", y4: " << y4 << endl;
 	return y4;

@@ -17,8 +17,10 @@ void generate_wavetable()
 {
 	ofstream wavetable;
 	ofstream textout;
+	double current_sampleval;
+	double waveform_max;
 	wavetable.open(WAVETABLE_FILENAME,ios::binary|ios::out);
-
+	double waveform_bfr[2048];
 	short*** res;
 
 	Oscillator* o=new Oscillator();
@@ -37,16 +39,28 @@ void generate_wavetable()
 // fill it
 	for(int a=0;a<256;a++)
 	{
+		cout << "a: " << a << endl;
 		for(int b=0;b<256;b++)
 		{
-			cout << "a: " << a << ",b: " << b << endl;
 			// call update twice to set frequency1
 			o->update((double)b/255,20.0+20.0*a);
 			o->update((double)b/255,20.0+20.0*a);
 			o->recalc_coeffs();
+			waveform_max=0;
+			for(int u=0;u<2048;u++)
+			{
+				current_sampleval=o->compute_nextval();
+				waveform_bfr[u]=current_sampleval;
+				if(fabs(current_sampleval)>waveform_max)
+				{
+					waveform_max=fabs(current_sampleval);
+				}
+			}
 			for(int c=0;c<2048;c++)
 			{
-				res[a][b][c]=static_cast<short>(o->compute_nextval());
+				current_sampleval=waveform_bfr[c]/waveform_max;
+				current_sampleval = current_sampleval*32767.0;
+				res[a][b][c]=(short)(current_sampleval);
 				wavetable.write(reinterpret_cast<char*>( &res[a][b][c] ) ,sizeof(res[a][b][c]));
 			}
 		}
@@ -88,11 +102,12 @@ short*** read_wavetable()
 			arraybfr=new short[2048];
 			wt_in.read(reinterpret_cast<char*>(arraybfr),2048*sizeof(short));
 			res2[a][b]=arraybfr;
-			/*
-			for(int c=0;c<2048;c++)
+			/*if(a==48 && b==25)
 			{
-				wt_in.read(reinterpret_cast<char*>(&bfrval),sizeof(short));
-				res2[a][b][c]=bfrval;
+				for(int c=0;c<2048;c++)
+				{
+					cout << "example waveform: " << arraybfr[c] << endl;
+				}
 			}*/
 		}
 	}

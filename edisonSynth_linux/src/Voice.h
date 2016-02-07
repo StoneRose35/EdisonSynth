@@ -21,13 +21,36 @@ private:
 	char is_on; // 0: off, 1: on
 	double osc1_amt; // goes from 0 to  1
 	double osc2_amt;
-	short osc1_semitones;
-	short osc2_semitones;
+	double osc1_semitones;
+	double osc2_semitones;
 	double env_value1;
 	double env_value2;
 	char param_set_active; // either 1 or 2
 	double interp_cntr;
 	double samples_to_interpolate;
+	double get_frequency(double noteval);
+
+public:
+	Oscillator* o1;
+	Oscillator* o2;
+	Envelope* env_vol;
+	Envelope* env_div;
+	LFO* lfo1;
+	LFO* lfo2;
+	Filter* filter;
+	Voice(short*** wt);
+
+
+	short get_nextval();
+	void update(double delta_t);
+
+	void set_note(int note);
+	int get_note();
+	bool is_voice_on();
+	void set_on_off(char on_off);
+	void set_osc1_level(double level);
+	void set_osc2_level(double level);
+	void set_pitchbend_value(int pb_midi); // pitch bend goin from 0 to 2^14 -1
 
 	double lfo1_to_o1_frequency;
 	double lfo1_to_o2_frequency;
@@ -57,30 +80,6 @@ private:
 
 	double pitchbend_value;
 	double pitchbend_amount;
-
-public:
-	Oscillator* o1;
-	Oscillator* o2;
-	Envelope* env_vol;
-	Envelope* env_div;
-	LFO* lfo1;
-	LFO* lfo2;
-	Filter* filter;
-	Voice(short*** wt);
-
-
-	short get_nextval();
-	void update(double delta_t);
-
-	void set_note(int note);
-	int get_note();
-	bool is_voice_on();
-	void set_on_off(char on_off);
-	void set_osc1_level(double level);
-	void set_osc2_level(double level);
-	void set_pitchbend_value(int pb_midi); // pitch bend goin from 0 to 2^14 -1
-private:
-	double get_frequency(double noteval);
 
 };
 
