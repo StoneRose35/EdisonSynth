@@ -14,11 +14,12 @@
 #include <limits>
 #include <alsa/asoundlib.h>
 #include <string.h>
+#include <sched.h>
 #include <ctime>
 #include "Oscillator.h"
 #include "Voice.h"
 #include "edisonSynth.h"
-#include "midi_controller.h"
+#include "midi_controller_raw.h"
 
 using namespace std;
 
@@ -236,14 +237,9 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 {
 	  int rc;
 	  unsigned int val=SAMPLING_RATE;
-	  double delta_t;
-	  double t_total=0.0;
-	  int perfclock_start;
-	  int perfclock_stop;
-	  double cpu_percentage;
+
 
 	  int nfds;
-	  int seq_nfds;
 	  pollfd* pfds;
 	  int l1;
 
@@ -310,37 +306,35 @@ void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params,snd_pcm_sw_params
 	  	  buffer = (char *) malloc(FRAMES_BUFFER*N_CHANNELS*2);
 
 	  	  //prepare poll descriptors
-	  	   seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
+	  	   //seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
 	  	   nfds = snd_pcm_poll_descriptors_count (handle);
-	  	   pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (seq_nfds + nfds));
-	  	   snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
-	  	   snd_pcm_poll_descriptors (handle, pfds+seq_nfds, nfds);
+	  	   pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (nfds));
+	  	   //snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
+	  	   snd_pcm_poll_descriptors (handle, pfds, nfds);
 
 	  	   engine_running = 1;
-	  	  cout << "Synth Engine running!" << endl;
 
+
+	  	  sched_param schparams;
+	  	sched_getparam(0, &schparams);
+	  	schparams.sched_priority = sched_get_priority_max(SCHED_RR);
+	  	cout << "setting priority: " << schparams.sched_priority << " for process " << getpid() << endl;
+	  	sched_setscheduler(0, SCHED_RR,&schparams);
+
+	  	  cout << "Synth Engine running!" << endl;
 	  	  while(engine_running==1)
 	  	  {
 
 
 
-	  		if (poll (pfds, seq_nfds + nfds, 1000) > 0) {
-				for (l1 = 0; l1 < seq_nfds; l1++) {
-				   if (pfds[l1].revents > 0) midi_action(seq_handle1);
-				}
-				for (l1 = seq_nfds; l1 < seq_nfds + nfds; l1++) {
-					if (pfds[l1].revents > 0) {
-						if (playback_callback(handle,FRAMES_BUFFER) < FRAMES_BUFFER) {
-							fprintf (stderr, "buffer underrun, try increasing the buffer size !\n");
-							snd_pcm_prepare(handle);
-						}
+	  		if (poll (pfds, nfds, 1000) > 0) {
+				for (l1 = 0; l1 < nfds; l1++) {
+					if (playback_callback(handle,FRAMES_BUFFER) < FRAMES_BUFFER) {
+						fprintf (stderr, "buffer underrun, try increasing the buffer size !\n");
+						snd_pcm_prepare(handle);
 					}
 				}
 			}
-
-			//perfclock_stop=clock();
-			//cpu_percentage = (perfclock_stop-perfclock_start)/CLOCKS_PER_SEC*SAMPLING_RATE/FRAMES_BUFFER*100;
-			//cout << "CPU load: " << cpu_percentage << "%" << endl;
 	  	  }
 
 	      snd_pcm_close (handle);
@@ -372,7 +366,7 @@ int main() {
 	init_voices();
 
 	// initialize thread handling midi
-	seq_handle1 = init_midi_controller(vocs,config);
+	init_rawmidi(config,vocs,&engine_running);
 
 	// start the thread used to shut down the engine properly
 	err = pthread_create(&shutdown_thread,NULL,&stop_synth,NULL);

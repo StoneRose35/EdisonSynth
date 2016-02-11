@@ -92,7 +92,6 @@ short*** read_wavetable()
 			res2[k][l]=new short[2048];
 		}*/
 	}
-	short bfrval;
 	// read in wavetable
 
 	for(int a=0;a<256;a++)

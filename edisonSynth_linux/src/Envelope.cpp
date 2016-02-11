@@ -23,7 +23,8 @@ Envelope::Envelope() {
 
 double Envelope::nextval(double delta_t)
 {
-double currval=0;
+double currval=1;
+
 	if (phase==0)
 	{
 		current_value=0;
@@ -35,6 +36,8 @@ double currval=0;
 		{
 			time_in_phase = time_in_phase+delta_t - attack;
 			phase = 2;
+			int time_full_vol = clock();
+			cout << "envelope at full volume at: " << time_full_vol/CLOCKS_PER_SEC*1000.0 << endl;
 		}
 		else
 		{
@@ -93,6 +96,7 @@ double currval=0;
 			return current_value;
 		}
 	}
+
 	return 0;
 }
 

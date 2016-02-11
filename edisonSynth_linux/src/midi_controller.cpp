@@ -46,7 +46,7 @@ int midi_action(snd_seq_t *seq_handle) {
     snd_seq_event_input(seq_handle, &ev);
     switch (ev->type) {
       case SND_SEQ_EVENT_CONTROLLER:
-    	  //cout << "received controller: " << ev->data.control.param << " with value: " << ev->data.control.value << endl;
+    	// cout << "received controller: " << ev->data.control.param << " with value: " << ev->data.control.value << endl;
         if(ev->data.control.param == 3)
         {
         	 for(int h=0;h<N_VOICES;h++)
@@ -144,7 +144,7 @@ int midi_action(snd_seq_t *seq_handle) {
     	  noteval=ev->data.note.note;
     	  int idx_free_voice;
     	  idx_free_voice=-1;
-    	  cout << "received note on: " << noteval << endl;
+    	 // cout << "received note on: " << noteval << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
     		  if(!voices_for_midi[h]->is_voice_on())
@@ -161,8 +161,6 @@ int midi_action(snd_seq_t *seq_handle) {
         break;
       case SND_SEQ_EVENT_NOTEOFF:
     	  noteval=ev->data.note.note;
-    	  int idx_switch_off;
-    	  idx_switch_off=-1;
     	  int switchoff_array[N_VOICES];
     	  int switchoff_cntr;
     	  switchoff_cntr=0;
@@ -173,7 +171,6 @@ int midi_action(snd_seq_t *seq_handle) {
     		  {
     			  if(voices_for_midi[h]->get_note()==noteval) // voice is taken
     			  {
-    				  idx_switch_off=h;
     				  switchoff_array[switchoff_cntr++]=h;
     			  }
     		  }
@@ -212,7 +209,6 @@ void* midi_thread_worker(void* args) {
 
 snd_seq_t * init_midi_controller(Voice** vocs_addr,char** midi_cfg)
 	{
-	int err;
 	cout << "initializing midi" << endl;
 	voices_for_midi=vocs_addr;
 	open_seq(midi_cfg[1]);
