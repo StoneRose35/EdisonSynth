@@ -25,6 +25,7 @@ using namespace std;
 EdisonSynthesizer::EdisonSynthesizer(char * flag_addr)
 {
 	engine_running=flag_addr;
+	buffer = new char[UPDATE_SIZE];
 }
 /*
  * reads the config file containing the alsa audio device name in the first line
@@ -176,8 +177,9 @@ void EdisonSynthesizer::init_midi()
  * */
 int EdisonSynthesizer::playback_callback(snd_pcm_t* handle)
 {
+#ifndef TESTING
 	int rc;
-
+#endif
 
 	short sample_val=0;
 
@@ -199,13 +201,19 @@ int EdisonSynthesizer::playback_callback(snd_pcm_t* handle)
 	    	}
 
 	  	  }
+#ifndef TESTING
 	rc = snd_pcm_writei(handle, buffer, FRAMES_BUFFER);
-
+#endif
 	for(int z=0;z<N_VOICES;z++)
 	{
 		vocs[z]->update(delta_t);
 	}
+#ifndef TESTING
 	return rc;
+#endif
+#ifdef TESTING
+	return 0;
+#endif
 }
 
 

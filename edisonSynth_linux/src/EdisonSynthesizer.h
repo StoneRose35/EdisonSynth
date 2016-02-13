@@ -22,11 +22,12 @@ public:
 	void init_voices();
 	void init_midi();
 	void start_synth();
-	// midi controller object
-	RawMidiController * rmc;
+	int playback_callback(snd_pcm_t* handle);
+	// the array of voice objects for the synthesizer
+	Voice * vocs[N_VOICES];
 private:
 	void start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *params);
-	int playback_callback(snd_pcm_t* handle);
+
 	void printIfError(int rc);
 	void show_alsa_info();
 
@@ -36,8 +37,8 @@ private:
 	// structure holding the hardware parameters (sampling rate, access mode, bits etc.)
 	snd_pcm_hw_params_t *params;
 
-	// the array of voice objects for the synthesizer
-	Voice * vocs[N_VOICES];
+	// midi controller object
+	RawMidiController * rmc;
 
 	// wavetable, this is a three-dim array
 	short*** wt;
