@@ -5,36 +5,32 @@
  *      Author: philipp
  */
 
+#include "RawMidiController.h"
+
 #include <pthread.h>
 #include <iostream>
 #include <alsa/asoundlib.h>
 #include "constants.h"
 #include "Voice.h"
-#include "edisonSynth.h"
-#include "midi_controller_raw.h"
+#include "EdisonSynthesizer.h"
 
-#define NOTEON 1
-#define NOTEOFF 2
-#define PITCHBEND 3
-#define MIDICONTROLLER 4
 
-snd_rawmidi_t* midiin = NULL;
-Voice ** voices_midiraw;
-pthread_t midiraw_controller_thread;
-char * should_be_running;
+
+
 
 using namespace std;
 
-void init_rawmidi(char ** config,Voice ** vocs_addr,char * flag_running)
+void RawMidiController::init(char ** config,Voice ** vocs_addr,char * flag_running)
 {
 	int status;
+	*flag_running=1;
 	should_be_running=flag_running;
-	   if ((status = snd_rawmidi_open(&midiin, NULL, config[1], SND_RAWMIDI_NONBLOCK)) < 0) {
+	   if ((status = snd_rawmidi_open(&midiin, NULL, config[1], SND_RAWMIDI_SYNC)) < 0) {
 	      cout << "Problem opening MIDI input: " << snd_strerror(status) << endl;
 	   }
 	voices_midiraw=vocs_addr;
 
-	status=pthread_create(&midiraw_controller_thread,NULL,midiinfunction,NULL);
+	status=pthread_create(&midiraw_controller_thread,NULL,RawMidiController::static_thread_method,NULL);
 	if(status ==-1)
 	{
 		cout << "Error creating midi thread" << endl;
@@ -42,14 +38,20 @@ void init_rawmidi(char ** config,Voice ** vocs_addr,char * flag_running)
 
 }
 
-void *midiinfunction(void *arg) {
+void* RawMidiController::static_thread_method(void* args)
+{
+	static_cast<RawMidiController*>(args)->midiinfunction();
+	return NULL;
+}
+
+void RawMidiController::midiinfunction() {
    // this is the parameter passed via last argument of pthread_create():
    char buffer[1];
    int status;
    int noteval;
-   char current_cmd;
-   char byte1;
-   char byte2;
+   unsigned char byte1;
+   unsigned char byte2;
+   unsigned char current_val;
    char processed;
    while (*should_be_running > 0) {
       if (midiin == NULL) {
@@ -59,47 +61,48 @@ void *midiinfunction(void *arg) {
          cout << "Problem reading MIDI input: " << snd_strerror(status) << endl;
       }
       processed=0;
-      if (((unsigned char)buffer[0]&0xF0) == 0x80) {  // note off
-    	  current_cmd=NOTEOFF;
+      current_val=(unsigned char)buffer[0];
+      if ((current_val&0xF0) == 0x80) {  // note off
+    	  last_cmd=NOTEOFF;
     	  byte1=0x80;
     	  byte2=0x80;
     	  processed=1;
       }
-      else if (((unsigned char)buffer[0]&0xF0) == 0x90) // note on
+      else if ((current_val&0xF0) == 0x90) // note on
       {
-    	  current_cmd=NOTEON;
+    	  last_cmd=NOTEON;
     	  byte1=0x80;
     	  byte2=0x80;
     	  processed=1;
       }
-      else if (((unsigned char)buffer[0]&0xF0) == 0xB0) // control change
+      else if ((current_val&0xF0) == 0xB0) // control change
       {
-    	  current_cmd=MIDICONTROLLER;
+    	  last_cmd=MIDICONTROLLER;
     	  byte1=0x80;
     	  byte2=0x80;
     	  processed=1;
       }
-      else if (((unsigned char)buffer[0]&0xF0) == 0xD0) // pitch bend
+      else if ((current_val&0xF0) == 0xD0) // pitch bend
       {
-    	  current_cmd=PITCHBEND;
+    	  last_cmd=PITCHBEND;
     	  byte1=0x80;
     	  byte2=0x80;
     	  processed=1;
       }
-      else if ((unsigned char)buffer[0] < 0x80 && byte1==0x80) // first data byte received
+      else if ((current_val&0x80)==0x00 && byte1==0x80)
       {
     	  byte1 = (unsigned char)buffer[0];
     	  processed=1;
       }
-      else if ((unsigned char)buffer[0] < 0x80 && byte1<0x80 && byte2 ==0x80 && processed==0) // second data byte received, time for action!
+      else if ((current_val&0x80)==0x00 && (byte1&0x80)==0x00 && byte2 ==0x80 && processed==0) // second data byte received, time for action!
       {
     	  byte2 = (unsigned char)buffer[0];
-    	  if(current_cmd==NOTEON && byte2>0)
+    	  if(last_cmd==NOTEON && byte2>0)
     	  {
     		  noteval = byte1;
     		  int idx_free_voice;
 			  idx_free_voice=-1;
-			 // cout << "received note on: " << noteval << endl;
+			  //cout << "received note on: " << noteval << endl;
 			  for(int h=0;h<N_VOICES;h++)
 			  {
 				  if(!voices_midiraw[h]->is_voice_on())
@@ -114,7 +117,7 @@ void *midiinfunction(void *arg) {
 				  voices_midiraw[idx_free_voice]->set_on_off(1);
 			  }
     	  }
-    	  else if(current_cmd==NOTEOFF || (current_cmd==NOTEON && byte2==0))
+    	  else if(last_cmd==NOTEOFF || (last_cmd==NOTEON && byte2==0))
     	  {
 			  int switchoff_array[N_VOICES];
 			  int switchoff_cntr;
@@ -138,7 +141,7 @@ void *midiinfunction(void *arg) {
 				  }
 			  }
     	  }
-    	  else if(current_cmd==MIDICONTROLLER)
+    	  else if(last_cmd==MIDICONTROLLER)
     	  {
 
     		    if(byte1 == 3)
@@ -227,7 +230,7 @@ void *midiinfunction(void *arg) {
     					  }
     		        }
     	  }
-    	  else if(current_cmd==PITCHBEND)
+    	  else if(last_cmd==PITCHBEND)
     	  {
     		  unsigned short pb_val;
     		  pb_val=0;
@@ -241,8 +244,8 @@ void *midiinfunction(void *arg) {
     	  byte2=0x80;
       }
 
+
    }
    snd_rawmidi_close(midiin);
    midiin  = NULL;
-   return NULL;
 }

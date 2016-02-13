@@ -58,7 +58,6 @@ Oscillator::Oscillator()
 void Oscillator::recalc_coeffs()
 {
 	double raw_val;
-	double filter_coeff;
 	double sum_coeffs=0;
 	if(harm_coeffs1)
 	{
@@ -67,17 +66,15 @@ void Oscillator::recalc_coeffs()
 	harm_coeffs1=new double[512];
 	for(int ii=0;ii<512;ii++)
 	{
-		//q=(1.0+(f_harm/f_cutoff)*(f_harm/f_cutoff));
-		filter_coeff = 1.0;// 1.0/sqrt(q*q*q*q + resonance*resonance -2*resonance*q*q*cos(4*atan(f_harm/f_cutoff)));
 		if(waveform==0) // square wave
 		{
 			if(ii==0)
 			{
-				raw_val = (((symm1/2.0-0.5)*2.0)*filter_coeff);
+				raw_val = (((symm1/2.0-0.5)*2.0));
 			}
 			else
 			{
-				raw_val = ((4.0/M_PI*sin(M_PI*(double)ii*symm1/2.0)/(double)ii))*filter_coeff;
+				raw_val = ((4.0/M_PI*sin(M_PI*(double)ii*symm1/2.0)/(double)ii));
 			}
 		}
 		else
@@ -88,7 +85,7 @@ void Oscillator::recalc_coeffs()
 			}
 			else
 			{
-				raw_val = ((-2.0*(pow(-1.0,(double)ii)*pow(2.0/symm1,2.0))/((double)ii*(double)ii*(2.0/symm1-1.0)*M_PI*M_PI)*sin(((double)ii*(2.0/symm1-1.0)*M_PI)/(2.0/symm1)))*filter_coeff);
+				raw_val = ((-2.0*(pow(-1.0,(double)ii)*pow(2.0/symm1,2.0))/((double)ii*(double)ii*(2.0/symm1-1.0)*M_PI*M_PI)*sin(((double)ii*(2.0/symm1-1.0)*M_PI)/(2.0/symm1))));
 			}
 		}
 		sum_coeffs+=raw_val*raw_val;
@@ -139,7 +136,7 @@ short Oscillator::get_nextval()
 	int phaseInt=current_phase;
 
 	int fInt=current_frequency/20.0-1.0;
-/*
+
 	if(fInt < 0)
 	{
 		fInt=0;
@@ -148,14 +145,7 @@ short Oscillator::get_nextval()
 	{
 		fInt=255;
 	}
-	if(symmInt<0)
-	{
-		symmInt=0;
-	}
-	if(symmInt>255)
-	{
-		symmInt=255;
-	}*/
+
 	sample_val=wavetable[fInt][symmInt][phaseInt];
 
 //	cout << "sample at [" << fInt << "][" << symmInt << "][" << phaseInt << "]: " << sample_val << endl;

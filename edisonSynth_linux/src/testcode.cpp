@@ -4,7 +4,9 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
-#include "generators.h"
+
+#include "EdisonSynthesizer.h"
+#include "WavetableAccessor.h"
 
 #define N_BUFFERLOADS 50000
 
@@ -57,7 +59,9 @@ void performance_test()
 		//generate_wavetable();
 		cout << "reading wavetable" << endl;
 		short*** wt;
-		wt=read_wavetable();
+		WavetableAccessor* wta;
+		wta=new WavetableAccessor();
+		wt=wta->read_wavetable();
 
 		voc_test=new Voice(wt);
 		buffer_test = new char[FRAMES_BUFFER*4];
@@ -128,45 +132,10 @@ void performance_test()
 #ifdef TESTING
 int main()
 {
-	ofstream waveout;
 
-	short*** wt;
-	//generate_wavetable();
-	cout << "reading wavetable" << endl;
-	wt=read_wavetable();
-	waveout.open("waveout.txt");
-	cout << "done" << endl;
-	voc_test=new Voice(wt);
-	buffer_test = new char[FRAMES_BUFFER*4];
-
-	int cnt2=0;
-	char note=62;
-	voc_test->set_note((int)note);
-	voc_test->set_on_off(1);
-	/*voc_test->o2->set_symm(0.1);
-	voc_test->env_vol->setAttack(0);
-	voc_test->env_vol->setDecay(1);
-	voc_test->env_vol->setSustain(1.0);
-	voc_test->env_vol->setRelease(420);
-	voc_test->env_div->setAttack(220);
-	voc_test->env_div->setDecay(45);
-	voc_test->env_div->setSustain(0.8);
-	voc_test->env_div->setRelease(420);
-	voc_test->lfo1->set_frequency(1.23);
-	voc_test->filter->set_fcutoff(5000.0);
-	voc_test->filter->set_res(0.6);*/
-	voc_test->update(0.00533333);
-	for(int r=0;r<2048;r++)
+	for(double z=0;z<128;z++)
 	{
-		waveout << voc_test->get_nextval() << endl;
-		cnt2++;
-		if(cnt2 > FRAMES_BUFFER-1)
-		{
-			voc_test->update(0.00533333);
-			cnt2=0;
-
-		}
+		cout << "Frequency of: " << z << " is: " << getFrequency(z) << endl;
 	}
-	waveout.close();
 }
 #endif

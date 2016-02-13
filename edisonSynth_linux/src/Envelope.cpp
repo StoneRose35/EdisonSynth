@@ -36,8 +36,6 @@ double currval=1;
 		{
 			time_in_phase = time_in_phase+delta_t - attack;
 			phase = 2;
-			int time_full_vol = clock();
-			cout << "envelope at full volume at: " << time_full_vol/CLOCKS_PER_SEC*1000.0 << endl;
 		}
 		else
 		{

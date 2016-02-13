@@ -2,8 +2,10 @@
 #include <iostream>
 #include <math.h>
 #include <fstream>
+#include <sys/stat.h>
 #include <alsa/asoundlib.h>
 #include "Oscillator.h"
+#include "WavetableAccessor.h"
 using namespace std;
 
 
@@ -13,7 +15,7 @@ using namespace std;
  * the second dimension is symmetry with linear interpolation between 0.0 and 1.0 over 256 values
  * the third dimension is time, each waveform contains 1024 samples.
  * */
-void generate_wavetable()
+void WavetableAccessor::generate_wavetable()
 {
 	ofstream wavetable;
 	ofstream textout;
@@ -76,7 +78,7 @@ void generate_wavetable()
 
 
 
-short*** read_wavetable()
+short*** WavetableAccessor::read_wavetable()
 {
 	short*** res2;
 	ifstream wt_in;
@@ -87,10 +89,6 @@ short*** read_wavetable()
 	for(int k=0;k<256;k++)
 	{
 		res2[k]=new short*[256];
-		/*for(int l=0;l<256;l++)
-		{
-			res2[k][l]=new short[2048];
-		}*/
 	}
 	// read in wavetable
 
@@ -101,18 +99,15 @@ short*** read_wavetable()
 			arraybfr=new short[2048];
 			wt_in.read(reinterpret_cast<char*>(arraybfr),2048*sizeof(short));
 			res2[a][b]=arraybfr;
-			/*if(a==48 && b==25)
-			{
-				for(int c=0;c<2048;c++)
-				{
-					cout << "example waveform: " << arraybfr[c] << endl;
-				}
-			}*/
 		}
 	}
 
-	//wt_in.read(reinterpret_cast<char*>(res2[0]),256*256*2048*sizeof(short));
-	//delete arraybfr;
 	wt_in.close();
 	return res2;
+}
+
+bool WavetableAccessor::is_wavetable_available()
+{
+	 struct stat buffer;
+	  return (stat (WAVETABLE_FILENAME, &buffer) == 0);
 }

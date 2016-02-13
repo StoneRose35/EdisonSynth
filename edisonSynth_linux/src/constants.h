@@ -13,7 +13,6 @@
  * Configuration constants for the Synth itself
  * */
 #define N_WAVEFORMS 5
-#define SAMPLE_SIZE 1746
 
 #define SAMPLING_RATE 48000
 #define F_LIMIT 20000
