@@ -30,7 +30,7 @@ void RawMidiController::init(char ** config,Voice ** vocs_addr,char * flag_runni
 	   }
 	voices_midiraw=vocs_addr;
 
-	status=pthread_create(&midiraw_controller_thread,NULL,RawMidiController::static_thread_method,NULL);
+	status=pthread_create(&midiraw_controller_thread,NULL,RawMidiController::static_thread_method,this);
 	if(status ==-1)
 	{
 		cout << "Error creating midi thread" << endl;
@@ -82,7 +82,7 @@ void RawMidiController::midiinfunction() {
     	  byte2=0x80;
     	  processed=1;
       }
-      else if ((current_val&0xF0) == 0xD0) // pitch bend
+      else if ((current_val&0xF0) == 0xE0) // pitch bend
       {
     	  last_cmd=PITCHBEND;
     	  byte1=0x80;
@@ -122,7 +122,8 @@ void RawMidiController::midiinfunction() {
 			  int switchoff_array[N_VOICES];
 			  int switchoff_cntr;
 			  switchoff_cntr=0;
-			  //cout << "received note off: " << noteval << endl;
+    		  noteval = byte1;
+    		  //cout << "received note off: " << noteval << endl;
 			  for(int h=0;h<N_VOICES;h++)
 			  {
 				  if(voices_midiraw[h]->is_voice_on())
@@ -234,7 +235,7 @@ void RawMidiController::midiinfunction() {
     	  {
     		  unsigned short pb_val;
     		  pb_val=0;
-    		  pb_val=(byte2 << 7) & byte1;
+    		  pb_val=(unsigned short)((byte2 << 7) | byte1);
         	  for(int h=0;h<N_VOICES;h++)
         	  {
         		  voices_midiraw[h]->set_pitchbend_value((int)pb_val);

@@ -8,14 +8,16 @@
 
 #include "EdisonSynthesizer.h"
 #include "constants.h"
+#include <time.h>
 #include <iostream>
-#include <math.h>
 #include <fstream>
+#include <math.h>
+
 #include <limits>
 #include <alsa/asoundlib.h>
 #include <string.h>
 #include <sched.h>
-#include <ctime>
+
 #include "WavetableAccessor.h"
 
 
@@ -154,7 +156,7 @@ void EdisonSynthesizer::init_voices()
 	  int start=clock();
 	  wt = wta->read_wavetable();
 	  int stop=clock();
-	  cout << "done, took " << ((double)(stop-start)/CLOCKS_PER_SEC)*1000 << " ms " << endl;
+	  cout << "done, took " << ((double)(stop-start)/1000000l)*1000 << " ms " << endl;
 	  Voice * voc;
 	  for(int h=0;h<N_VOICES;h++)
 	  {
@@ -255,7 +257,7 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 	  printIfError(rc);
 
 	  unsigned long periodsize;
-	  periodsize=FRAMES_BUFFER*2;
+	  periodsize=FRAMES_BUFFER;
 	  rc = snd_pcm_hw_params_set_buffer_size_near(handle, params, &periodsize);
 	  printIfError(rc);
 
@@ -284,7 +286,6 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 	sched_param schparams;
 	sched_getparam(0, &schparams);
 	schparams.sched_priority = sched_get_priority_max(SCHED_FIFO);
-	//cout << "setting priority: " << schparams.sched_priority << " for process " << getpid() << endl;
 	sched_setscheduler(0, SCHED_FIFO,&schparams);
 
 	cout << "Synth Engine running!" << endl;
