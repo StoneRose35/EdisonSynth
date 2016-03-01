@@ -89,6 +89,13 @@ void RawMidiController::midiinfunction() {
     	  byte2=0x80;
     	  processed=1;
       }
+      else if((current_val&0x80)>0) // other command
+      {
+    	  last_cmd=CMD_UNKNOWN;
+    	  byte1=0x80;
+    	  byte2=0x80;
+    	  processed=1;
+      }
       else if ((current_val&0x80)==0x00 && byte1==0x80)
       {
     	  byte1 = (unsigned char)buffer[0];

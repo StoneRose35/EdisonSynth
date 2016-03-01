@@ -12,6 +12,7 @@
 #define NOTEOFF 2
 #define PITCHBEND 3
 #define MIDICONTROLLER 4
+#define CMD_UNKNOWN 64
 #include <alsa/asoundlib.h>
 #include "Voice.h"
 
