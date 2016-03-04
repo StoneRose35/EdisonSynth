@@ -52,6 +52,9 @@ private:
 	// the precomputed time elapsed between two ring buffer writes, used of updating the modulation sources
 	double delta_t;
 
+	//
+	snd_seq_t* seq_handle1;
+
 	char * engine_running;
 
 };

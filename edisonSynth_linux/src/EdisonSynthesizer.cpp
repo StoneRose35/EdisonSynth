@@ -8,6 +8,7 @@
 
 #include "EdisonSynthesizer.h"
 #include "constants.h"
+#include "midi_controller.h"
 #include <time.h>
 #include <iostream>
 #include <fstream>
@@ -170,6 +171,7 @@ void EdisonSynthesizer::init_midi()
 {
 	rmc=new RawMidiController();
 	rmc->init(config,vocs,engine_running);
+	//seq_handle1=init_midi_controller(vocs,"default");
 }
 
 /**
@@ -288,11 +290,43 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 	schparams.sched_priority = sched_get_priority_max(SCHED_FIFO);
 	sched_setscheduler(0, SCHED_FIFO,&schparams);
 
+
+
+
+    //prepare poll descriptors
+	int seq_nfds;
+	int nfds;
+	pollfd* pfds;
+
+	//seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
+	seq_nfds = snd_rawmidi_poll_descriptors_count(rmc->midiin);
+	nfds = snd_pcm_poll_descriptors_count (handle);
+	pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (seq_nfds + nfds));
+	//snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
+	snd_rawmidi_poll_descriptors(rmc->midiin, pfds, seq_nfds);
+	snd_pcm_poll_descriptors (handle, pfds+seq_nfds, nfds);
+
 	cout << "Synth Engine running!" << endl;
+	int l1;
 	while(*engine_running==1)
 	{
+
+  		if (poll (pfds, seq_nfds + nfds, 1000) > 0) {
+			for (l1 = 0; l1 < seq_nfds; l1++) {
+			   if (pfds[l1].revents > 0) rmc->midiinfunction();//midi_action(seq_handle1);
+			}
+			for (l1 = seq_nfds; l1 < seq_nfds + nfds; l1++) {
+				if (pfds[l1].revents > 0) {
+					if (playback_callback(handle) < FRAMES_BUFFER) {
+						fprintf (stderr, "buffer underrun, try increasing the buffer size !\n");
+						snd_pcm_prepare(handle);
+					}
+				}
+			}
+
+		}
 		/*plain old single threaded audio handling*/
-		playback_callback(handle);
+		//playback_callback(handle);
 
 	 }
 

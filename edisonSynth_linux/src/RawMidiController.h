@@ -20,11 +20,12 @@ class RawMidiController
 {
 public:
 	void init(char **,Voice **,char *);
-
-private:
-	void midiinfunction();
-	static void *static_thread_method(void *arg);
 	snd_rawmidi_t* midiin = NULL;
+	void midiinfunction();
+private:
+
+	static void *static_thread_method(void *arg);
+
 	Voice ** voices_midiraw;
 	pthread_t midiraw_controller_thread;
 	char * should_be_running;
