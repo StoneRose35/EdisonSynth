@@ -169,9 +169,9 @@ void EdisonSynthesizer::init_voices()
 
 void EdisonSynthesizer::init_midi()
 {
-	rmc=new RawMidiController();
-	rmc->init(config,vocs,engine_running);
-	//seq_handle1=init_midi_controller(vocs,"default");
+	//rmc=new RawMidiController();
+	//rmc->init(config,vocs,engine_running);
+	seq_handle1=init_midi_controller(vocs,"default");
 }
 
 /**
@@ -298,12 +298,12 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 	int nfds;
 	pollfd* pfds;
 
-	//seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
-	seq_nfds = snd_rawmidi_poll_descriptors_count(rmc->midiin);
+	seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
+	//seq_nfds = snd_rawmidi_poll_descriptors_count(rmc->midiin);
 	nfds = snd_pcm_poll_descriptors_count (handle);
 	pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (seq_nfds + nfds));
-	//snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
-	snd_rawmidi_poll_descriptors(rmc->midiin, pfds, seq_nfds);
+	snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
+	//snd_rawmidi_poll_descriptors(rmc->midiin, pfds, seq_nfds);
 	snd_pcm_poll_descriptors (handle, pfds+seq_nfds, nfds);
 
 	cout << "Synth Engine running!" << endl;
@@ -313,7 +313,7 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 
   		if (poll (pfds, seq_nfds + nfds, 1000) > 0) {
 			for (l1 = 0; l1 < seq_nfds; l1++) {
-			   if (pfds[l1].revents > 0) rmc->midiinfunction();//midi_action(seq_handle1);
+			   if (pfds[l1].revents > 0) midi_action(seq_handle1);
 			}
 			for (l1 = seq_nfds; l1 < seq_nfds + nfds; l1++) {
 				if (pfds[l1].revents > 0) {

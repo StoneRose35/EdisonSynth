@@ -60,17 +60,10 @@ int midi_action(snd_seq_t *seq_handle) {
     	  //cout << "received note on: " << noteval << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
-    		  if(voices_for_midi[h]->is_voice_on())
-    		  {
-    			  if(voices_for_midi[h]->get_note()==noteval) // voice is taken
-    			  {
-    				  idx_free_voice=-1;
-    				  break;
-    			  }
-    		  }
-    		  else
+    		  if(!voices_for_midi[h]->is_voice_on())
     		  {
     			  idx_free_voice=h;
+    			  break;
     		  }
     	  }
     	  if(idx_free_voice>-1)
@@ -81,24 +74,29 @@ int midi_action(snd_seq_t *seq_handle) {
         break;
       case SND_SEQ_EVENT_NOTEOFF:
     	  noteval=ev->data.note.note;
+		  int switchoff_array[N_VOICES];
+		  int switchoff_cntr;
+		  switchoff_cntr=0;
     	  int idx_switch_off;
     	  idx_switch_off=-1;
     	  //cout << "received note off: " << noteval << endl;
     	  for(int h=0;h<N_VOICES;h++)
     	  {
     		  if(voices_for_midi[h]->is_voice_on())
-    		  {
-    			  if(voices_for_midi[h]->get_note()==noteval) // voice is taken
-    			  {
-    				  idx_switch_off=h;
-    				  break;
-    			  }
-    		  }
+			  {
+				  if(voices_for_midi[h]->get_note()==noteval) // voice is taken
+				  {
+					  switchoff_array[switchoff_cntr++]=h;
+				  }
+			  }
     	  }
-    	  if(idx_switch_off>-1)
-    	  {
-    		  voices_for_midi[idx_switch_off]->set_on_off(0);
-    	  }
+		  if(switchoff_cntr>0)
+		  {
+			  for(int q=0;q<switchoff_cntr;q++)
+			  {
+				  voices_for_midi[switchoff_array[q]]->set_on_off(0);
+			  }
+		  }
         break;
     }
     snd_seq_free_event(ev);

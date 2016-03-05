@@ -31,8 +31,8 @@ Voice::Voice(short*** wt)
 	osc1_semitones=0;
 	osc2_semitones=12;
 	current_note=22;
-	env_vol->setAttack(20);
-	env_vol->setRelease(520);
+	env_vol->setAttack(0);
+	env_vol->setRelease(0);
 
 	env_div->setAttack(20);
 	env_div->setDecay(100);
