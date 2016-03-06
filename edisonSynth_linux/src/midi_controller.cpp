@@ -124,16 +124,24 @@ void* midi_thread_worker(void* args) {
 
 snd_seq_t * init_midi_controller(Voice** vocs_addr,char* midi_dev)
 {
-
 	int err;
+	snd_seq_addr sender_addr;
+	snd_seq_addr receiver_addr;
+	snd_seq_port_subscribe_t *portsubs;
 	cout << "initializing midi" << endl;
 	voices_for_midi=vocs_addr;
 	open_seq(midi_dev);
-	//err=pthread_create(&midi_controller_thread,NULL,&midi_thread_worker,NULL);
-	//if(err!=0)
-	//{
-	//	cout << "midi controller init error: thread creation not possible" << endl;
-	//}
+	snd_seq_port_subscribe_malloc(&portsubs);
+	sender_addr.client=24;
+	sender_addr.port=0;
+	receiver_addr.client=128;
+	receiver_addr.port=0;
+	snd_seq_port_subscribe_set_sender(portsubs,&sender_addr);
+	snd_seq_port_subscribe_set_dest(portsubs,&receiver_addr);
+	snd_seq_port_subscribe_set_queue(portsubs,1);
+	snd_seq_port_subscribe_set_time_real(portsubs,1);
+	snd_seq_port_subscribe_set_time_update(portsubs,1);
+	snd_seq_subscribe_port(seq_handle,portsubs);
 	return seq_handle;
 
 }
