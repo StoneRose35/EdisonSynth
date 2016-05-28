@@ -13,7 +13,7 @@
  */
 
  #include <m16def.inc>
- .equ N_CHANNELS = 0x30
+ .equ N_CHANNELS = 0x40
 .org 0x000
 jmp reset
 
@@ -21,6 +21,10 @@ jmp reset
 // interrupt for TWI
 .org TWIaddr
 jmp TWIInterrupt 
+
+.org OVF0addr
+jmp Counter0Interrupt
+
 
 // starting point of the application
  .org 0x038
@@ -59,12 +63,12 @@ jmp TWIInterrupt
  ldi r16,(1<<REFS0)|(1<<ADLAR)
  out ADMUX,r16
 
- ldi r16,(1<<ADEN)|(0<<ADSC)|(1<<ADPS2)
+ ldi r16,(1<<ADEN)|(0<<ADSC)|(1<<ADPS1)|(1<<ADPS0)
  out ADCSRA,r16
 
 
  // set portd to out
- ldi r16,0x07
+ ldi r16,0b01000111
  out DDRD,r16
 
  // enable interrupts
@@ -74,10 +78,14 @@ jmp TWIInterrupt
  main:
  
  ldi r19,0x00
+ rjmp ADCReadOutLoop
+
+ rjmp main
 
  ADCReadOutLoop:
  // set multiplexer channel ,which are the tree lsb's of the channel counter r19
  in r17,ADMUX
+ andi r17,0b11100000
  mov r16,r19
  andi r16,0x07
  or r17,r16
@@ -91,6 +99,13 @@ jmp TWIInterrupt
  out portd,r16
 
 
+ // wait loop between external muxer set and adc begin
+ldi r17,0x50
+cont5:
+dec r17
+brne cont5
+
+
  // start a adc conversion
  in r18,ADCSRA
  ori r18,(1<<ADSC)
@@ -101,9 +116,6 @@ jmp TWIInterrupt
  in r18,ADCSRA
  sbrs r18,ADIF
  rjmp waitForAdc
-
- ori r18,(1<<ADIF)
- out ADCSRA,r18
 
  // check which bank should be updated
  lds r16,bankActive
@@ -121,7 +133,7 @@ jmp TWIInterrupt
  rjmp cont1
 
  updateBankB:
-  in r16,ADCH
+ in r16,ADCH
  ldi XH,HIGH(controllerValuesB)
  ldi XL,LOW(controllerValuesB)
  add XL,r19
@@ -130,6 +142,8 @@ jmp TWIInterrupt
  st X,r16
 
  cont1:
+  ori r18,(1<<ADIF)
+ out ADCSRA,r18
  inc r19
  cpi r19,N_CHANNELS
  brne ADCReadOutLoop
@@ -146,10 +160,6 @@ setAupdating:
  ori r16,0x05 // set bank b ready (4) and a updating (1)
   sts bankActive,r16
  rjmp ADCReadOutLoop
-
-
- rjmp main
-
 
  // interrupt handler for TWI events
  TWIInterrupt:
@@ -205,27 +215,29 @@ setAupdating:
  in r16,TWSR
  ori r16,(1 << TWIE)|(1<<TWEA)
  out TWSR,r16
- inc r19
- sts twiCounter,r19
- rjmp  sendValues_incCounter
+//rjmp  sendValues_incCounter
 
  sendValues_incCounter:
  inc r19
  sts twiCounter,r19
-
+ rjmp returnFromTwiInt
 
  // check for case "$B8", data byte transmitted and ACK received
  checkDataByteTransmitted:
  cpi r16,0xB8
- brne returnFromTwiInt
+ brne errorcase
 
 // data has been transmitted and ACK has been received
 lds r19,twiCounter
 cpi r19,N_CHANNELS
 brne sendValues // send values if last hasn't been sent yet
 ldi r19,0x00
+rcall switchOnDebugLed
 sts twiCounter,r19
+rjmp returnFromTwiInt
 
+errorcase:
+rcall switchOnDebugLed
 
  returnFromTwiInt:
  // clear interrupt flag
@@ -242,6 +254,38 @@ sts twiCounter,r19
  pop r16
  reti
 
+
+ switchOnDebugLed:
+ push r16
+ in r16,PORTD
+ ori r16,0b01000000
+ out PORTD,r16
+ ldi r16,0x05
+ out TCCR0,r16
+ in r16,TIMSK
+ ori r16,(1<<TOIE0)
+ out TIMSK,r16
+
+ pop r16
+ ret
+
+ // switches off the debug led
+ Counter0Interrupt:
+ push r16
+ in r16,SREG
+ push r16
+
+
+ in r16,PORTD
+ andi r16,0b10111111
+ out PORTD,r16
+ ldi r16,0x00
+ out TCCR0,r16 // stop the clock
+
+ pop r16
+ out SREG,r16
+ pop r16
+ reti
 
  // program variables
  .dseg
