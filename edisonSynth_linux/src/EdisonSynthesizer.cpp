@@ -175,6 +175,12 @@ void EdisonSynthesizer::init_midi()
 	smc->init_midi_controller(vocs,config[1],config[2],config[3]);
 }
 
+
+void EdisonSynthesizer::init_i2c()
+{
+	i2ccontroller = new I2CController();
+	i2ccontroller->init_i2c(vocs,engine_running);
+}
 /**
  * the callback function doing the sample calculation, basically mixes all active voices sound output together
  * the places the values as short integers into the write buffer the passes them to also, which in turn does the rest of the

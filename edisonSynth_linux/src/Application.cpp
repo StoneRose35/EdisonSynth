@@ -52,6 +52,9 @@ int main() {
 	// initialize thread handling midi
 	es->init_midi();
 
+	// initialize the i2c controller
+	es->init_i2c();
+
 	// start the thread used to shut down the engine properly
 #ifdef USE_MONITORING
 	int err;

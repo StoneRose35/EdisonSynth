@@ -13,6 +13,7 @@
 #include "constants.h"
 #include "RawMidiController.h"
 #include "SeqMidiController.h"
+#include "I2CController.h"
 
 class EdisonSynthesizer
 {
@@ -21,6 +22,7 @@ public:
 	void read_config();
 	static double getFrequency(double notenumber);
 	void init_voices();
+	void init_i2c();
 	void init_midi();
 	void start_synth();
 	int playback_callback(snd_pcm_t* handle);
@@ -55,6 +57,9 @@ private:
 
 	// sequencer midi controller object
 	SeqMidiController* smc;
+
+	// I2C Controller for the analog controls of the synth
+	I2CController* i2ccontroller;
 
 	char * engine_running;
 

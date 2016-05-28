@@ -22,11 +22,12 @@ I2CController::I2CController() {
 void I2CController::init_i2c(Voice ** vocs_addr,char * is_running)
 {
 	mraa::Result res = mraa::init();
-	if (res!=mraa::SUCCESS){
+	if (res!=mraa::SUCCESS && res !=mraa::ERROR_PLATFORM_ALREADY_INITIALISED){
 		cout << "Error initializing mraa" << endl;
+		cout << "returned code is " << res << endl;
 	}
 	should_be_running = is_running;
-	i2cc=new mraa::I2c(0);
+	i2cc=new mraa::I2c(1);
 	i2cc->frequency(mraa::I2C_STD);
 	voices_i2cc=vocs_addr;
 	int status;
@@ -70,6 +71,7 @@ void I2CController::readerfunction()
 			int rdcntr = i2cc->read(bfr1,64);
 			for(int z=0;z<rdcntr;z++)
 			{
+
 				if((bfr1[z]>bfr0[z] && bfr1[z]-bfr0[z]>2) || (bfr0[z]>bfr1[z] && bfr0[z]-bfr1[z]>2) )
 				{
 					// set the corresponding voice parameter
@@ -78,7 +80,6 @@ void I2CController::readerfunction()
 				}
 			}
 		}
-
 
 		if(buffer_used==0)
 		{

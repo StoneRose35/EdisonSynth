@@ -7,6 +7,7 @@
 
 #include "EdisonSynthesizer.h"
 #include "WavetableAccessor.h"
+#include "I2CController.h"
 
 #define N_BUFFERLOADS 50000
 
@@ -74,6 +75,18 @@ int main()
 	{
 		cout << "Frequency of: " << z << " is: " << EdisonSynthesizer::getFrequency(z) << endl;
 	}*/
-	performance_test();
+	//performance_test();
+	I2CController * i2c;
+	char i2c_running;
+	i2c_running = 1;
+	i2c=new I2CController();
+	i2c->init_i2c(NULL,&i2c_running);
+	char answer[16];
+	while(1)
+	{
+		cout << "enter \"q\" to stop the synth " << endl;
+		cin >> answer;
+		break;
+	}
 }
 #endif
