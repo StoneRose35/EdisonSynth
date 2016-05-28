@@ -12,6 +12,7 @@
 #include <alsa/asoundlib.h>
 #include "constants.h"
 #include "RawMidiController.h"
+#include "SeqMidiController.h"
 
 class EdisonSynthesizer
 {
@@ -52,8 +53,8 @@ private:
 	// the precomputed time elapsed between two ring buffer writes, used of updating the modulation sources
 	double delta_t;
 
-	//
-	snd_seq_t* seq_handle1;
+	// sequencer midi controller object
+	SeqMidiController* smc;
 
 	char * engine_running;
 

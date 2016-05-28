@@ -245,19 +245,24 @@ void Oscillator::update(double symmetry,double frequency)
 	}
 	interp_cntr=0;
 }
-
+/**
+ * Does a rough update in which the frequency interpolator is set inactive
+ * to avoid unintentional legato
+ * */
 void Oscillator::update(double frequency)
 {
 	if(coeffs_active==1)
 	{
 		symm2=symm1;
 		frequency_2=frequency;
+		frequency_1=frequency;
 		coeffs_active=2;
 	}
 	else
 	{
 		symm1=symm2;
 		frequency_1=frequency;
+		frequency_2=frequency;
 		coeffs_active=1;
 	}
 	interp_cntr=0;

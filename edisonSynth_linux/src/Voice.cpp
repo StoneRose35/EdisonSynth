@@ -101,7 +101,7 @@ bool Voice::is_voice_on()
 }
 
 /*
- * gets the next sample value of the voice, (almsot) no computation is done the the voice is off
+ * gets the next sample value of the voice, (almost) no computation is done if the voice is off
  * */
 short Voice::get_nextval()
 {

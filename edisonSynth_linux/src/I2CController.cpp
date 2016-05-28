@@ -54,8 +54,8 @@ void I2CController::readerfunction()
 		i2cc->address(I2C_ADDRESS);
 		if(buffer_used==0)
 		{
-			i2cc->read(bfr0,64);
-			for(int z=0;z<64;z++)
+			int rdcntr = i2cc->read(bfr0,64);
+			for(int z=0;z<rdcntr;z++)
 			{
 				if((bfr1[z]>bfr0[z] && bfr1[z]-bfr0[z]>2) || (bfr0[z]>bfr1[z] && bfr0[z]-bfr1[z]>2) )
 				{
@@ -67,8 +67,8 @@ void I2CController::readerfunction()
 		}
 		else
 		{
-			i2cc->read(bfr1,64);
-			for(int z=0;z<64;z++)
+			int rdcntr = i2cc->read(bfr1,64);
+			for(int z=0;z<rdcntr;z++)
 			{
 				if((bfr1[z]>bfr0[z] && bfr1[z]-bfr0[z]>2) || (bfr0[z]>bfr1[z] && bfr0[z]-bfr1[z]>2) )
 				{

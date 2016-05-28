@@ -8,7 +8,6 @@
 
 #include "EdisonSynthesizer.h"
 #include "constants.h"
-#include "midi_controller.h"
 #include <time.h>
 #include <iostream>
 #include <fstream>
@@ -19,6 +18,7 @@
 #include <string.h>
 #include <sched.h>
 
+#include "SeqMidiController.h"
 #include "WavetableAccessor.h"
 
 
@@ -171,7 +171,8 @@ void EdisonSynthesizer::init_midi()
 {
 	//rmc=new RawMidiController();
 	//rmc->init(config,vocs,engine_running);
-	seq_handle1=init_midi_controller(vocs,"default");
+	smc=new SeqMidiController();
+	smc->init_midi_controller(vocs,config[1],config[2],config[3]);
 }
 
 /**
@@ -298,11 +299,11 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 	int nfds;
 	pollfd* pfds;
 
-	seq_nfds = snd_seq_poll_descriptors_count(seq_handle1, POLLIN);
+	seq_nfds = snd_seq_poll_descriptors_count(smc->mseq, POLLIN);
 	//seq_nfds = snd_rawmidi_poll_descriptors_count(rmc->midiin);
 	nfds = snd_pcm_poll_descriptors_count (handle);
 	pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (seq_nfds + nfds));
-	snd_seq_poll_descriptors(seq_handle1, pfds, seq_nfds, POLLIN);
+	snd_seq_poll_descriptors(smc->mseq, pfds, seq_nfds, POLLIN);
 	//snd_rawmidi_poll_descriptors(rmc->midiin, pfds, seq_nfds);
 	snd_pcm_poll_descriptors (handle, pfds+seq_nfds, nfds);
 
@@ -313,7 +314,7 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 
   		if (poll (pfds, seq_nfds + nfds, 1000) > 0) {
 			for (l1 = 0; l1 < seq_nfds; l1++) {
-			   if (pfds[l1].revents > 0) midi_action(seq_handle1);
+			   if (pfds[l1].revents > 0) smc->midi_action();
 			}
 			for (l1 = seq_nfds; l1 < seq_nfds + nfds; l1++) {
 				if (pfds[l1].revents > 0) {
@@ -325,8 +326,6 @@ void EdisonSynthesizer::start_audio(snd_pcm_t *handle,snd_pcm_hw_params_t *param
 			}
 
 		}
-		/*plain old single threaded audio handling*/
-		//playback_callback(handle);
 
 	 }
 
