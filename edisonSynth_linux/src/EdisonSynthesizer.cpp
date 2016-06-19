@@ -38,7 +38,7 @@ void EdisonSynthesizer::read_config()
 {
 	char** result;
 
-	result=new char*[4];
+	result=new char*[3];
 
 	ifstream cfg_stream;
 	streampos fsize;
@@ -77,17 +77,6 @@ void EdisonSynthesizer::read_config()
 	result[2]=new char[sz+1];
 	str_res.copy(result[2],sz,0);
 	result[2][sz]='\0';
-
-	getline(cfg_stream,str_res);
-	while(str_res.substr(0,1)=="#")
-	{
-		getline(cfg_stream,str_res);
-	}
-
-	sz = str_res.size();
-	result[3]=new char[sz+1];
-	str_res.copy(result[3],sz,0);
-	result[3][sz]='\0';
 
 	cfg_stream.close();
 	config=result;
@@ -172,7 +161,7 @@ void EdisonSynthesizer::init_midi()
 	//rmc=new RawMidiController();
 	//rmc->init(config,vocs,engine_running);
 	smc=new SeqMidiController();
-	smc->init_midi_controller(vocs,config[1],config[2],config[3]);
+	smc->init_midi_controller(vocs,config[1],config[2]);
 }
 
 

@@ -26,8 +26,8 @@ void SeqMidiController::open_seq(char* midi_dev ) {
     cout << "Error opening ALSA sequencer." << endl;
     exit(1);
   }
-  snd_seq_set_client_name(mseq, "EdisonSynth Midi Sequencer");
-  if ((portid = snd_seq_create_simple_port(mseq, "EdisonSynth Midi Sequencer",
+  snd_seq_set_client_name(mseq, SEQUENCER_NAME);
+  if ((portid = snd_seq_create_simple_port(mseq, SEQUENCER_NAME,
             SND_SEQ_PORT_CAP_WRITE|SND_SEQ_PORT_CAP_SUBS_WRITE,
             SND_SEQ_PORT_TYPE_APPLICATION)) < 0) {
     fprintf(stderr, "Error creating sequencer port.\n");
@@ -102,7 +102,7 @@ int SeqMidiController::midi_action() {
 }
 
 
-void SeqMidiController::init_midi_controller(Voice** vocs_addr,char* midi_dev,char* clientPort,char* instrumentPort)
+void SeqMidiController::init_midi_controller(Voice** vocs_addr,char* midi_dev,char* clientName)
 {
 	snd_seq_addr sender_addr;
 	snd_seq_addr receiver_addr;
@@ -111,9 +111,9 @@ void SeqMidiController::init_midi_controller(Voice** vocs_addr,char* midi_dev,ch
 	voices_for_midi=vocs_addr;
 	open_seq(midi_dev);
 	snd_seq_port_subscribe_malloc(&portsubs);
-	sender_addr.client=atoi(clientPort);
+	sender_addr.client=searchMidiClient(clientName);
 	sender_addr.port=0;
-	receiver_addr.client=atoi(instrumentPort);
+	receiver_addr.client=searchMidiClient(SEQUENCER_NAME);
 	receiver_addr.port=0;
 	snd_seq_port_subscribe_set_sender(portsubs,&sender_addr);
 	snd_seq_port_subscribe_set_dest(portsubs,&receiver_addr);
@@ -121,6 +121,27 @@ void SeqMidiController::init_midi_controller(Voice** vocs_addr,char* midi_dev,ch
 	snd_seq_port_subscribe_set_time_real(portsubs,1);
 	snd_seq_port_subscribe_set_time_update(portsubs,1);
 	snd_seq_subscribe_port(mseq,portsubs);
+}
+
+int SeqMidiController::searchMidiClient(const char* clientName)
+{
+	int client_detected;
+	int client_id;
+	std::string clientnamestring;
+	snd_seq_client_info_t * info;
+	snd_seq_client_info_malloc(&info);
+	client_detected = snd_seq_query_next_client(mseq,info);
+	while(client_detected > -1)
+	{
+		const char * clientname = snd_seq_client_info_get_name(info);
+		clientnamestring=string(clientname);
+		if (clientnamestring.find(clientName)==0)
+		{
+			client_id = snd_seq_client_info_get_client(info);
+		}
+		client_detected = snd_seq_query_next_client(mseq,info);
+	}
+	return client_id;
 }
 
 

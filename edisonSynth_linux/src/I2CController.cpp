@@ -61,8 +61,19 @@ void I2CController::readerfunction()
 				if((bfr1[z]>bfr0[z] && bfr1[z]-bfr0[z]>2) || (bfr0[z]>bfr1[z] && bfr0[z]-bfr1[z]>2) )
 				{
 					// set the corresponding voice parameter
+					if(z==0)
+					{
+						for(int h=0;h<N_VOICES;h++)
+					    {
+							 voices_i2cc[h]->filter_cutoff_base=bfr0[z]*0.8982/2.0-48;
+					    }
+					}
 
 					bfr1[z]=bfr0[z];
+				}
+				if(z==0)
+				{
+
 				}
 			}
 		}
@@ -75,6 +86,14 @@ void I2CController::readerfunction()
 				if((bfr1[z]>bfr0[z] && bfr1[z]-bfr0[z]>2) || (bfr0[z]>bfr1[z] && bfr0[z]-bfr1[z]>2) )
 				{
 					// set the corresponding voice parameter
+
+					if(z==0)
+					{
+						for(int h=0;h<N_VOICES;h++)
+					    {
+							 voices_i2cc[h]->filter_cutoff_base=bfr1[z]*0.8982/2.0-48;
+					    }
+					}
 
 					bfr0[z]=bfr1[z];
 				}
@@ -89,6 +108,7 @@ void I2CController::readerfunction()
 		{
 			buffer_used=0;
 		}
+		usleep(50000);
 	}
 }
 
