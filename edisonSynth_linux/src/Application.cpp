@@ -55,6 +55,9 @@ int main() {
 	// initialize the i2c controller
 	es->init_i2c();
 
+	// initialize the gui
+	es->init_gui();
+
 	// start the thread used to shut down the engine properly
 #ifdef USE_MONITORING
 	int err;

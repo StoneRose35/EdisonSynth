@@ -8,9 +8,11 @@
 #ifndef LCDISPLAY_H_
 #define LCDISPLAY_H_
 
-#include "gpio.hpp";
+
+#include "gpio.hpp"
 
 #define WAIT_TIME 3
+
 using namespace mraa;
 
 class LCDisplay {

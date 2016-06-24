@@ -14,6 +14,7 @@
 #include "RawMidiController.h"
 #include "SeqMidiController.h"
 #include "I2CController.h"
+#include "Gui.h"
 
 class EdisonSynthesizer
 {
@@ -24,6 +25,7 @@ public:
 	void init_voices();
 	void init_i2c();
 	void init_midi();
+	void init_gui();
 	void start_synth();
 	int playback_callback(snd_pcm_t* handle);
 	// the array of voice objects for the synthesizer
@@ -60,6 +62,9 @@ private:
 
 	// I2C Controller for the analog controls of the synth
 	I2CController* i2ccontroller;
+
+	//Gui Controller for the Text output to LCDisplay
+	Gui* guicontroller;
 
 	char * engine_running;
 

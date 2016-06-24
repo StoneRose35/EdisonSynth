@@ -6,7 +6,10 @@
  */
 
 #include "LCDisplay.h"
+#include "gpio.hpp"
+#include <unistd.h>
 
+using namespace std;
 
 LCDisplay::LCDisplay() {
 	// TODO Auto-generated constructor stub
@@ -156,6 +159,10 @@ void LCDisplay::CmdIn(char cmd,int reg)
 void LCDisplay::Set4BitOperation()
 {
 	int busyflag;
+	d4_pin->dir(DIR_OUT);
+	d5_pin->dir(DIR_OUT);
+	d6_pin->dir(DIR_OUT);
+	d7_pin->dir(DIR_OUT);
 	int cmd = 0x20;
 	rs_pin->write(0);
 	rw_pin->write(0);
