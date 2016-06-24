@@ -11,6 +11,16 @@
 
 using namespace std;
 
+/*
+ * Pinout for display is as follows:
+ * Arduino Pin0: RS
+ *         Pin1: RW
+ *         Pin2: E
+ *         Pin4: DB7
+ *         Pin7: DB6
+ *         Pin8: DB5
+ *         Pin12: DB4
+ * */
 Gui::Gui() {
 	// TODO Auto-generated constructor stub
 
@@ -20,7 +30,7 @@ void Gui::init_gui(char * is_running)
 {
 	int status;
 	should_be_running=is_running;
-	display=new LCDisplay(1,2,3,4,5,6,7);
+	display=new LCDisplay(128,130,131,42,49,48,129);
 	status=pthread_create(&gui_thread,NULL,Gui::static_thread_method,this);
 	if(status ==-1)
 	{
@@ -36,10 +46,9 @@ void* Gui::static_thread_method(void * args)
 
 void Gui::thread_function()
 {
-	char* displaystring;
 	while(*should_be_running==1)
 	{
-		displaystring="Hello Synthie";
+		char* displaystring="Hello Synthie";
 		display->writeString(displaystring);
 		usleep(50000);
 	}

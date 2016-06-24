@@ -106,54 +106,47 @@ void LCDisplay::CmdIn(char cmd,int reg)
 	rs_pin->write(reg);
 	rw_pin->write(0);
 	usleep(WAIT_TIME);
-	e_pin->write(1);
+
 	// write msn
 	d4_pin->write(cmd & 0x10);
 	d5_pin->write(cmd & 0x20);
 	d6_pin->write(cmd & 0x40);
 	d7_pin->write(cmd & 0x80);
-	usleep(WAIT_TIME);
-	e_pin->write(0);
-	usleep(WAIT_TIME);
-	e_pin->write(1);
+	ToggleEPin();
 	d4_pin->write(cmd & 0x01);
 	d5_pin->write(cmd & 0x02);
 	d6_pin->write(cmd & 0x04);
 	d7_pin->write(cmd & 0x08);
-	usleep(WAIT_TIME);
-	e_pin->write(0);
+	ToggleEPin();
 
 	// check busy flag
 	d4_pin->dir(DIR_IN);
 	d5_pin->dir(DIR_IN);
 	d6_pin->dir(DIR_IN);
 	d7_pin->dir(DIR_IN);
-	usleep(WAIT_TIME);
-	rw_pin->write(1);
-	usleep(WAIT_TIME);
+	ToggleEPin();
 	busyflag = d7_pin->read();
-	e_pin->write(0);
 
 
 	// read address counter (not used)
+	ToggleEPin();
+	while (busyflag > 0)
+	{
+		ToggleEPin();
+		busyflag = d7_pin->read();
+
+		// read address counter (not used)
+		ToggleEPin();
+	}
+}
+
+void LCDisplay::ToggleEPin()
+{
 	usleep(WAIT_TIME);
 	e_pin->write(1);
 	usleep(WAIT_TIME);
 	e_pin->write(0);
-	while (busyflag > 0)
-	{
-		usleep(WAIT_TIME);
-		e_pin->write(1);
-		usleep(WAIT_TIME);
-		busyflag = d7_pin->read();
-		e_pin->write(0);
-
-		// read address counter (not used)
-		usleep(WAIT_TIME);
-		e_pin->write(1);
-		usleep(WAIT_TIME);
-		e_pin->write(0);
-	}
+	usleep(WAIT_TIME);
 }
 
 void LCDisplay::Set4BitOperation()
@@ -167,46 +160,31 @@ void LCDisplay::Set4BitOperation()
 	rs_pin->write(0);
 	rw_pin->write(0);
 	usleep(WAIT_TIME);
-	e_pin->write(1);
 	// write msn
 	d4_pin->write(cmd & 0x10);
 	d5_pin->write(cmd & 0x20);
 	d6_pin->write(cmd & 0x40);
 	d7_pin->write(cmd & 0x80);
-	usleep(WAIT_TIME);
-	e_pin->write(0);
-	usleep(WAIT_TIME);
+	ToggleEPin();
 
 	// check busy flag
 	d4_pin->dir(DIR_IN);
 	d5_pin->dir(DIR_IN);
 	d6_pin->dir(DIR_IN);
 	d7_pin->dir(DIR_IN);
-	usleep(WAIT_TIME);
-	rw_pin->write(1);
-	usleep(WAIT_TIME);
+	ToggleEPin();
 	busyflag = d7_pin->read();
-	e_pin->write(0);
 
 
 	// read address counter (not used)
-	usleep(WAIT_TIME);
-	e_pin->write(1);
-	usleep(WAIT_TIME);
-	e_pin->write(0);
+	ToggleEPin();
 	while (busyflag > 0)
 	{
-		usleep(WAIT_TIME);
-		e_pin->write(1);
-		usleep(WAIT_TIME);
+		ToggleEPin();
 		busyflag = d7_pin->read();
-		e_pin->write(0);
 
 		// read address counter (not used)
-		usleep(WAIT_TIME);
-		e_pin->write(1);
-		usleep(WAIT_TIME);
-		e_pin->write(0);
+		ToggleEPin();
 	}
 }
 
