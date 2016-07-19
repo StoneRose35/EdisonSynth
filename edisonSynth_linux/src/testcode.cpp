@@ -67,6 +67,14 @@ void performance_test()
 		cout << "Results for sampling: Avg is: " << mean_sampling*(SAMPLING_RATE/1000)/FRAMES_BUFFER*100 << "% of time available " << endl;
 }
 
+void displayTest()
+{
+
+	LCDisplay* display;
+	display=new LCDisplay(2,0,1,12,8,6,4);//(13,26,35,50,47,33,25);
+	display->writeString("Hello");
+}
+
 #ifdef TESTING
 int main()
 {
@@ -76,7 +84,7 @@ int main()
 		cout << "Frequency of: " << z << " is: " << EdisonSynthesizer::getFrequency(z) << endl;
 	}*/
 	//performance_test();
-	I2CController * i2c;
+	/*I2CController * i2c;
 	char i2c_running;
 	i2c_running = 1;
 	i2c=new I2CController();
@@ -87,6 +95,7 @@ int main()
 		cout << "enter \"q\" to stop the synth " << endl;
 		cin >> answer;
 		break;
-	}
+	}*/
+	displayTest();
 }
 #endif

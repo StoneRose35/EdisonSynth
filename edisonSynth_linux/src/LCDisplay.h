@@ -31,7 +31,9 @@ private:
 	Gpio* d7_pin;
 	void CmdIn(char cmd,int reg);// 0 instruction register, 1: data register
 	void Set4BitOperation();
-	void ToggleEPin();
+	void WriteSingleCmd(int cmd);
+	int ToggleEPin();
+	int greaterZeroToInt(int nrin);
 };
 
 

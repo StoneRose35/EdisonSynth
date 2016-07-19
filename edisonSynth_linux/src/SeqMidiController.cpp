@@ -106,7 +106,6 @@ void SeqMidiController::init_midi_controller(Voice** vocs_addr,char* midi_dev,ch
 {
 	snd_seq_addr sender_addr;
 	snd_seq_addr receiver_addr;
-	snd_seq_port_subscribe_t *portsubs;
 	cout << "initializing midi" << endl;
 	voices_for_midi=vocs_addr;
 	open_seq(midi_dev);
@@ -144,6 +143,45 @@ int SeqMidiController::searchMidiClient(const char* clientName)
 	return client_id;
 }
 
+void SeqMidiController::reattach_midi_client(char * new_midi_dev)
+{
+	snd_seq_addr sender_addr;
+	snd_seq_addr receiver_addr;
+	if(portsubs!=NULL && mseq!=NULL)
+	{
+		snd_seq_unsubscribe_port(mseq,portsubs);
+		snd_seq_port_subscribe_free(portsubs);
+	}
+	snd_seq_port_subscribe_malloc(&portsubs);
+	sender_addr.client=searchMidiClient(new_midi_dev);
+	sender_addr.port=0;
+	receiver_addr.client=searchMidiClient(SEQUENCER_NAME);
+	receiver_addr.port=0;
+	snd_seq_port_subscribe_set_sender(portsubs,&sender_addr);
+	snd_seq_port_subscribe_set_dest(portsubs,&receiver_addr);
+	snd_seq_port_subscribe_set_queue(portsubs,1);
+	snd_seq_port_subscribe_set_time_real(portsubs,1);
+	snd_seq_port_subscribe_set_time_update(portsubs,1);
+	snd_seq_subscribe_port(mseq,portsubs);
+}
 
+int SeqMidiController::getAllMidiClients(char *** clientarray)
+{
+	int client_detected;
+	int client_id;
+	int client_cntr;
+	std::string clientnamestring;
+	snd_seq_client_info_t * info;
+	snd_seq_client_info_malloc(&info);
+	client_detected = snd_seq_query_next_client(mseq,info);
+	client_cntr=0;
+	while(client_detected > -1)
+	{
+		const char * clientname = snd_seq_client_info_get_name(info);
+		*clientarray[client_cntr]=(char*)clientname;
+		client_cntr++;
+	}
+	return client_cntr;
+}
 
 

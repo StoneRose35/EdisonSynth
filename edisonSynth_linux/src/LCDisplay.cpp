@@ -8,6 +8,8 @@
 #include "LCDisplay.h"
 #include "gpio.hpp"
 #include <unistd.h>
+#include <iostream>
+#include "common.hpp"
 
 using namespace std;
 
@@ -18,9 +20,10 @@ LCDisplay::LCDisplay() {
 
 LCDisplay::LCDisplay(int e_pn,int rs_pn,int rw_pn,int d0_pn,int d1_pn,int d2_pn,int d3_pn)
 {
+	mraa::init();
 	// setup pins
 	e_pin=new Gpio(e_pn);
-	e_pin->dir(DIR_OUT);
+    e_pin->dir(DIR_OUT);
 	rs_pin=new Gpio(rs_pn);
 	rs_pin->dir(DIR_OUT);
 	rw_pin=new Gpio(rw_pn);
@@ -34,9 +37,14 @@ LCDisplay::LCDisplay(int e_pn,int rs_pn,int rw_pn,int d0_pn,int d1_pn,int d2_pn,
 	d7_pin=new Gpio(d3_pn);
 	d7_pin->dir(DIR_OUT);
 
+
 	Set4BitOperation();
-	CmdIn(0x28,0); // Function set: 2line display, 4bit operation
+	CmdIn(0x28,0); // Function set: 1line display, 4bit operation
+	usleep(50);
 	CmdIn(12,0); // Display on, no cursor
+	usleep(50);
+	CmdIn(1,0); // Display clear
+	usleep(1600);
 	CmdIn(6,0); // Entry set: increment
 
 
@@ -70,22 +78,46 @@ void LCDisplay::writeString(char * string)
 	CmdIn(2,0); // return home
 	while(*(string+cntr)!=0)
 	{
-		CmdIn(*(string+cntr),1);
-		cntr++;
-		if(cntr>19 && linenumber==0)
+		if(*(string+cntr)==10 || *(string+cntr)==13)
 		{
-			CmdIn(0xC0,0); // jump to second line
-			linenumber++;
+			if(linenumber==0)
+			{
+				cntr=20;
+				CmdIn(0xC0,0); // jump to second line
+				linenumber++;
+			}
+			else if(linenumber==1)
+			{
+				cntr=40;
+				CmdIn(0x14,0); // jump to third line
+				linenumber++;
+			}
+			else if(linenumber==2)
+			{
+				cntr=60;
+				CmdIn(0x54,0); // jump to fourth line
+				linenumber++;
+			}
 		}
-		else if (cntr>39 && linenumber==1)
+		else
 		{
-			CmdIn(0x14,0); // jump to third line
-			linenumber++;
-		}
-		else if (cntr>59 && linenumber==2)
-		{
-			CmdIn(0x54,0); // jump to fourth line
-			linenumber++;
+			CmdIn(*(string+cntr),1);
+			cntr++;
+			if(cntr>19 && linenumber==0)
+			{
+				CmdIn(0xC0,0); // jump to second line
+				linenumber++;
+			}
+			else if (cntr>39 && linenumber==1)
+			{
+				CmdIn(0x14,0); // jump to third line
+				linenumber++;
+			}
+			else if (cntr>59 && linenumber==2)
+			{
+				CmdIn(0x54,0); // jump to fourth line
+				linenumber++;
+			}
 		}
 	}
 }
@@ -108,15 +140,15 @@ void LCDisplay::CmdIn(char cmd,int reg)
 	usleep(WAIT_TIME);
 
 	// write msn
-	d4_pin->write(cmd & 0x10);
-	d5_pin->write(cmd & 0x20);
-	d6_pin->write(cmd & 0x40);
-	d7_pin->write(cmd & 0x80);
+	d4_pin->write(greaterZeroToInt(cmd & 0x10));
+	d5_pin->write(greaterZeroToInt(cmd & 0x20));
+	d6_pin->write(greaterZeroToInt(cmd & 0x40));
+	d7_pin->write(greaterZeroToInt(cmd & 0x80));
 	ToggleEPin();
-	d4_pin->write(cmd & 0x01);
-	d5_pin->write(cmd & 0x02);
-	d6_pin->write(cmd & 0x04);
-	d7_pin->write(cmd & 0x08);
+	d4_pin->write(greaterZeroToInt(cmd & 0x01));
+	d5_pin->write(greaterZeroToInt(cmd & 0x02));
+	d6_pin->write(greaterZeroToInt(cmd & 0x04));
+	d7_pin->write(greaterZeroToInt(cmd & 0x08));
 	ToggleEPin();
 
 	// check busy flag
@@ -124,67 +156,87 @@ void LCDisplay::CmdIn(char cmd,int reg)
 	d5_pin->dir(DIR_IN);
 	d6_pin->dir(DIR_IN);
 	d7_pin->dir(DIR_IN);
-	ToggleEPin();
-	busyflag = d7_pin->read();
+	rw_pin->write(1);
+	busyflag = ToggleEPin();
 
 
 	// read address counter (not used)
 	ToggleEPin();
 	while (busyflag > 0)
 	{
-		ToggleEPin();
-		busyflag = d7_pin->read();
-
+		usleep(40);
+		busyflag = ToggleEPin();
 		// read address counter (not used)
 		ToggleEPin();
 	}
 }
 
-void LCDisplay::ToggleEPin()
+int LCDisplay::ToggleEPin()
 {
+	int busyflag;
 	usleep(WAIT_TIME);
+	e_pin->mode(mraa::MODE_STRONG);
 	e_pin->write(1);
 	usleep(WAIT_TIME);
+	busyflag = d7_pin->read();
 	e_pin->write(0);
 	usleep(WAIT_TIME);
+	return busyflag;
+}
+int LCDisplay::greaterZeroToInt(int nrin)
+{
+	if(nrin>0)
+		return 1;
+	else
+		return 0;
 }
 
 void LCDisplay::Set4BitOperation()
 {
 	int busyflag;
-	d4_pin->dir(DIR_OUT);
-	d5_pin->dir(DIR_OUT);
-	d6_pin->dir(DIR_OUT);
-	d7_pin->dir(DIR_OUT);
-	int cmd = 0x20;
-	rs_pin->write(0);
-	rw_pin->write(0);
-	usleep(WAIT_TIME);
-	// write msn
-	d4_pin->write(cmd & 0x10);
-	d5_pin->write(cmd & 0x20);
-	d6_pin->write(cmd & 0x40);
-	d7_pin->write(cmd & 0x80);
-	ToggleEPin();
-
+    /*WriteSingleCmd(0x30);
+    usleep(5000);
+    WriteSingleCmd(0x30);
+    usleep(400);
+    WriteSingleCmd(0x30);
+    usleep(400);*/
+    WriteSingleCmd(0x20);
+    usleep(40);
+    /*
 	// check busy flag
 	d4_pin->dir(DIR_IN);
 	d5_pin->dir(DIR_IN);
 	d6_pin->dir(DIR_IN);
 	d7_pin->dir(DIR_IN);
-	ToggleEPin();
-	busyflag = d7_pin->read();
+	rw_pin->write(1);
+    busyflag = ToggleEPin();
 
 
 	// read address counter (not used)
 	ToggleEPin();
 	while (busyflag > 0)
 	{
-		ToggleEPin();
-		busyflag = d7_pin->read();
+		busyflag = ToggleEPin();
 
 		// read address counter (not used)
 		ToggleEPin();
-	}
+	}*/
+}
+
+void LCDisplay::WriteSingleCmd(int cmd)
+{
+	d4_pin->dir(DIR_OUT);
+	d5_pin->dir(DIR_OUT);
+	d6_pin->dir(DIR_OUT);
+	d7_pin->dir(DIR_OUT);
+	rs_pin->write(0);
+	rw_pin->write(0);
+	usleep(WAIT_TIME);
+	// write msn
+	d4_pin->write(greaterZeroToInt(cmd & 0x10));
+	d5_pin->write(greaterZeroToInt(cmd & 0x20));
+	d6_pin->write(greaterZeroToInt(cmd & 0x40));
+	d7_pin->write(greaterZeroToInt(cmd & 0x80));
+	ToggleEPin();
 }
 
