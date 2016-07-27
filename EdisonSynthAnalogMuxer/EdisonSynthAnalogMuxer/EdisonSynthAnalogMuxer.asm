@@ -67,9 +67,22 @@ jmp Counter0Interrupt
  out ADCSRA,r16
 
 
+
  // set portd to out
- ldi r16,0b01000111
+ ldi r16,0b01100111
  out DDRD,r16
+
+
+ // setup counter 1 for fast 8-bit pwm mode generating a square wave to feed the charge pumpt for the lcd contrast voltag
+ ldi r16,0b10000001
+ out TCCR1A,r16
+ ldi r16,0b00001001
+ out TCCR1B,r16
+ ldi r16,0x80
+ ldi r17,0x00
+ out OCR1AH,r17
+ out OCR1AL,r16
+
 
  // enable interrupts
  sei
