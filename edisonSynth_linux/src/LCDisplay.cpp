@@ -38,11 +38,12 @@ LCDisplay::LCDisplay(int e_pn,int rs_pn,int rw_pn,int d0_pn,int d1_pn,int d2_pn,
 	d7_pin->dir(DIR_OUT);
 
 
-	Set4BitOperation();
+    WriteSingleCmd(0x20);
+    usleep(60);
 	CmdIn(0x28,0); // Function set: 1line display, 4bit operation
-	usleep(50);
+	usleep(60);
 	CmdIn(12,0); // Display on, no cursor
-	usleep(50);
+	usleep(60);
 	CmdIn(1,0); // Display clear
 	usleep(1600);
 	CmdIn(6,0); // Entry set: increment
@@ -53,8 +54,11 @@ LCDisplay::LCDisplay(int e_pn,int rs_pn,int rw_pn,int d0_pn,int d1_pn,int d2_pn,
 void LCDisplay::writeString(char * string)
 {
 	int cntr=0;
+	int linecntr=0;
 	char linenumber=0;
-	CmdIn(2,0); // return home
+	CmdIn(1,0); // clear display
+	usleep(1600);
+	/*
 	// clear entire display (write empty characters
 	for(int cnt2=0;cnt2<20;cnt2++)
 	{
@@ -76,50 +80,54 @@ void LCDisplay::writeString(char * string)
 		CmdIn(0x20,1);
 	}
 	CmdIn(2,0); // return home
+	*/
 	while(*(string+cntr)!=0)
 	{
 		if(*(string+cntr)==10 || *(string+cntr)==13)
 		{
 			if(linenumber==0)
 			{
-				cntr=20;
-				CmdIn(0xC0,0); // jump to second line
+				linecntr=20;
+				CmdIn(0x40+0x80,0); // jump to second line
 				linenumber++;
 			}
 			else if(linenumber==1)
 			{
-				cntr=40;
-				CmdIn(0x14,0); // jump to third line
+				linecntr=40;
+				CmdIn(0x14+0x80,0); // jump to third line
 				linenumber++;
 			}
 			else if(linenumber==2)
 			{
-				cntr=60;
-				CmdIn(0x54,0); // jump to fourth line
+				linecntr=60;
+				CmdIn(0x54+0x80,0); // jump to fourth line
 				linenumber++;
 			}
+			cntr++;
 		}
 		else
 		{
 			CmdIn(*(string+cntr),1);
 			cntr++;
-			if(cntr>19 && linenumber==0)
+			linecntr++;
+			if(linecntr>19 && linenumber==0)
 			{
-				CmdIn(0xC0,0); // jump to second line
+				CmdIn(0x40+0x80,0); // jump to second line
 				linenumber++;
 			}
-			else if (cntr>39 && linenumber==1)
+			else if (linecntr>39 && linenumber==1)
 			{
-				CmdIn(0x14,0); // jump to third line
+				CmdIn(0x14+0x80,0); // jump to third line
 				linenumber++;
 			}
-			else if (cntr>59 && linenumber==2)
+			else if (linecntr>59 && linenumber==2)
 			{
-				CmdIn(0x54,0); // jump to fourth line
+				CmdIn(0x54+0x80,0); // jump to fourth line
 				linenumber++;
 			}
 		}
 	}
+	rs_pin->write(0);
 }
 
 LCDisplay::~LCDisplay() {
@@ -156,19 +164,19 @@ void LCDisplay::CmdIn(char cmd,int reg)
 	d5_pin->dir(DIR_IN);
 	d6_pin->dir(DIR_IN);
 	d7_pin->dir(DIR_IN);
-	rw_pin->write(1);
-	busyflag = ToggleEPin();
+	//rw_pin->write(1);
+	//busyflag = ToggleEPin();
 
 
 	// read address counter (not used)
-	ToggleEPin();
-	while (busyflag > 0)
-	{
-		usleep(40);
-		busyflag = ToggleEPin();
+	//ToggleEPin();
+	usleep(60);
+	//while (busyflag > 0)
+	//{
+	//	busyflag = ToggleEPin();
 		// read address counter (not used)
-		ToggleEPin();
-	}
+	//	ToggleEPin();
+	//}
 }
 
 int LCDisplay::ToggleEPin()
@@ -201,7 +209,7 @@ void LCDisplay::Set4BitOperation()
     WriteSingleCmd(0x30);
     usleep(400);*/
     WriteSingleCmd(0x20);
-    usleep(40);
+    //usleep(40);
     /*
 	// check busy flag
 	d4_pin->dir(DIR_IN);

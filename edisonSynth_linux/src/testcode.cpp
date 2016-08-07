@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include "EdisonSynthesizer.h"
 #include "WavetableAccessor.h"
@@ -69,10 +70,19 @@ void performance_test()
 
 void displayTest()
 {
-
+	int cnt1;
+	cnt1=0;
+    string displayString="Hello Synth\nSynthie";
 	LCDisplay* display;
 	display=new LCDisplay(2,0,1,12,8,6,4);//(13,26,35,50,47,33,25);
-	display->writeString("Hello");
+	//display->writeString((char*)displayString.c_str());
+	while(cnt1 < 16)
+	{
+		displayString="Counting " + to_string(cnt1) + "\nLine2\nLine3\nLine4";
+		display->writeString((char*)displayString.c_str());
+		cnt1++;
+		sleep(1);
+	}
 }
 
 #ifdef TESTING

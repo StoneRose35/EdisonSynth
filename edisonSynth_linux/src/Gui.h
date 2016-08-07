@@ -21,9 +21,11 @@ public:
 	Gpio* buttonUp;
 	Gpio* buttonDown;
 	Gpio* buttonOk;
+	void displayCurrentMidiClient();
 private:
 	static void *static_thread_method(void *arg);
 	void thread_function();
+
 	pthread_t gui_thread;
 	char* should_be_running;
 	LCDisplay* display;
@@ -34,7 +36,5 @@ private:
 
 
 };
-static void buttonUpHandler(void* args);
-static void buttonDownHandler(void* args);
-static void buttonOkHandler(void* args);
+
 #endif /* GUI_H_ */
