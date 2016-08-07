@@ -37,15 +37,20 @@ LCDisplay::LCDisplay(int e_pn,int rs_pn,int rw_pn,int d0_pn,int d1_pn,int d2_pn,
 	d7_pin=new Gpio(d3_pn);
 	d7_pin->dir(DIR_OUT);
 
+   //initialize by instructions
+	WriteSingleCmd(0x30);
+	usleep(5000);
+	WriteSingleCmd(0x30);
+	usleep(200);
+	WriteSingleCmd(0x30);
+	usleep(60);
 
+	// set 4-bit interface
     WriteSingleCmd(0x20);
     usleep(60);
 	CmdIn(0x28,0); // Function set: 1line display, 4bit operation
-	usleep(60);
 	CmdIn(12,0); // Display on, no cursor
-	usleep(60);
 	CmdIn(1,0); // Display clear
-	usleep(1600);
 	CmdIn(6,0); // Entry set: increment
 
 
@@ -57,30 +62,7 @@ void LCDisplay::writeString(char * string)
 	int linecntr=0;
 	char linenumber=0;
 	CmdIn(1,0); // clear display
-	usleep(1600);
-	/*
-	// clear entire display (write empty characters
-	for(int cnt2=0;cnt2<20;cnt2++)
-	{
-		CmdIn(0x20,1);
-	}
-	CmdIn(0xC0,0); // jump to second line
-	for(int cnt2=0;cnt2<20;cnt2++)
-	{
-		CmdIn(0x20,1);
-	}
-	CmdIn(0x14,0); // jump to third line
-	for(int cnt2=0;cnt2<20;cnt2++)
-	{
-		CmdIn(0x20,1);
-	}
-	CmdIn(0x54,0); // jump to fourth line
-	for(int cnt2=0;cnt2<20;cnt2++)
-	{
-		CmdIn(0x20,1);
-	}
-	CmdIn(2,0); // return home
-	*/
+
 	while(*(string+cntr)!=0)
 	{
 		if(*(string+cntr)==10 || *(string+cntr)==13)
@@ -164,19 +146,19 @@ void LCDisplay::CmdIn(char cmd,int reg)
 	d5_pin->dir(DIR_IN);
 	d6_pin->dir(DIR_IN);
 	d7_pin->dir(DIR_IN);
-	//rw_pin->write(1);
-	//busyflag = ToggleEPin();
+	rs_pin->write(0);
+	rw_pin->write(1);
+	busyflag = ToggleEPin();
 
 
 	// read address counter (not used)
-	//ToggleEPin();
-	usleep(60);
-	//while (busyflag > 0)
-	//{
-	//	busyflag = ToggleEPin();
+	ToggleEPin();
+	while (busyflag > 0)
+	{
+		busyflag = ToggleEPin();
 		// read address counter (not used)
-	//	ToggleEPin();
-	//}
+		ToggleEPin();
+	}
 }
 
 int LCDisplay::ToggleEPin()
@@ -199,37 +181,6 @@ int LCDisplay::greaterZeroToInt(int nrin)
 		return 0;
 }
 
-void LCDisplay::Set4BitOperation()
-{
-	int busyflag;
-    /*WriteSingleCmd(0x30);
-    usleep(5000);
-    WriteSingleCmd(0x30);
-    usleep(400);
-    WriteSingleCmd(0x30);
-    usleep(400);*/
-    WriteSingleCmd(0x20);
-    //usleep(40);
-    /*
-	// check busy flag
-	d4_pin->dir(DIR_IN);
-	d5_pin->dir(DIR_IN);
-	d6_pin->dir(DIR_IN);
-	d7_pin->dir(DIR_IN);
-	rw_pin->write(1);
-    busyflag = ToggleEPin();
-
-
-	// read address counter (not used)
-	ToggleEPin();
-	while (busyflag > 0)
-	{
-		busyflag = ToggleEPin();
-
-		// read address counter (not used)
-		ToggleEPin();
-	}*/
-}
 
 void LCDisplay::WriteSingleCmd(int cmd)
 {
