@@ -27,7 +27,7 @@ void I2CController::init_i2c(Voice ** vocs_addr,char * is_running)
 		cout << "returned code is " << res << endl;
 	}
 	should_be_running = is_running;
-	i2cc=new mraa::I2c(1);
+	i2cc=new mraa::I2c(6);
 	i2cc->frequency(mraa::I2C_STD);
 	voices_i2cc=vocs_addr;
 	int status;
