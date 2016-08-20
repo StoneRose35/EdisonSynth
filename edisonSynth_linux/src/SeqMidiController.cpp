@@ -168,8 +168,8 @@ void SeqMidiController::reattach_midi_client(char * new_midi_dev)
 int SeqMidiController::getAllMidiClients(char *** clientarray)
 {
 	int client_detected;
-	int client_id;
 	int client_cntr;
+	int u;
 	std::string clientnamestring;
 	snd_seq_client_info_t * info;
 	snd_seq_client_info_malloc(&info);
@@ -178,9 +178,19 @@ int SeqMidiController::getAllMidiClients(char *** clientarray)
 	while(client_detected > -1)
 	{
 		const char * clientname = snd_seq_client_info_get_name(info);
-		*clientarray[client_cntr]=(char*)clientname;
-		client_cntr++;
+		if(strcmp(clientname,SEQUENCER_NAME)!=0)
+		{
+			u=0;
+			while(clientname[u]!=0)
+			{
+				(*clientarray)[client_cntr][u]=clientname[u];
+				u++;
+			}
+			client_cntr++;
+		}
+		client_detected = snd_seq_query_next_client(mseq,info);
 	}
+	snd_seq_client_info_free(info);
 	return client_cntr;
 }
 

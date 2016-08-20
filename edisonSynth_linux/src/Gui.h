@@ -21,7 +21,9 @@ public:
 	Gpio* buttonUp;
 	Gpio* buttonDown;
 	Gpio* buttonOk;
-	void displayCurrentMidiClient();
+	char ** midiclients;
+	SeqMidiController * smc;
+	void displayCurrentMidiClient(char *** clientlist);
 private:
 	static void *static_thread_method(void *arg);
 	void thread_function();
@@ -29,10 +31,9 @@ private:
 	pthread_t gui_thread;
 	char* should_be_running;
 	LCDisplay* display;
-	char ** midiclients;
 
 
-	SeqMidiController * smc;
+
 
 
 };

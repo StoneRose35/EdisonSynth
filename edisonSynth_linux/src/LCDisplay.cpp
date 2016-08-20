@@ -24,18 +24,25 @@ LCDisplay::LCDisplay(int e_pn,int rs_pn,int rw_pn,int d0_pn,int d1_pn,int d2_pn,
 	// setup pins
 	e_pin=new Gpio(e_pn);
     e_pin->dir(DIR_OUT);
+    e_pin->useMmap(true);
 	rs_pin=new Gpio(rs_pn);
 	rs_pin->dir(DIR_OUT);
+    rs_pin->useMmap(true);
 	rw_pin=new Gpio(rw_pn);
 	rw_pin->dir(DIR_OUT);
+    rw_pin->useMmap(true);
 	d4_pin=new Gpio(d0_pn);
 	d4_pin->dir(DIR_OUT);
+    d4_pin->useMmap(true);
 	d5_pin=new Gpio(d1_pn);
 	d5_pin->dir(DIR_OUT);
+    d5_pin->useMmap(true);
 	d6_pin=new Gpio(d2_pn);
 	d6_pin->dir(DIR_OUT);
+    d6_pin->useMmap(true);
 	d7_pin=new Gpio(d3_pn);
 	d7_pin->dir(DIR_OUT);
+    d7_pin->useMmap(true);
 
    //initialize by instructions
 	WriteSingleCmd(0x30);
@@ -56,16 +63,18 @@ LCDisplay::LCDisplay(int e_pn,int rs_pn,int rw_pn,int d0_pn,int d1_pn,int d2_pn,
 
 }
 
-void LCDisplay::writeString(char * string)
+void LCDisplay::writeString(char * txttowrite)
 {
+
 	int cntr=0;
 	int linecntr=0;
 	char linenumber=0;
+	//int start = clock();
 	CmdIn(1,0); // clear display
 
-	while(*(string+cntr)!=0)
+	while(*(txttowrite+cntr)!=0)
 	{
-		if(*(string+cntr)==10 || *(string+cntr)==13)
+		if(*(txttowrite+cntr)==10 || *(txttowrite+cntr)==13)
 		{
 			if(linenumber==0)
 			{
@@ -89,7 +98,7 @@ void LCDisplay::writeString(char * string)
 		}
 		else
 		{
-			CmdIn(*(string+cntr),1);
+			CmdIn(*(txttowrite+cntr),1);
 			cntr++;
 			linecntr++;
 			if(linecntr>19 && linenumber==0)
@@ -110,6 +119,9 @@ void LCDisplay::writeString(char * string)
 		}
 	}
 	rs_pin->write(0);
+
+	//int stop = clock();
+	//cout << "LCD Writing took " << ((double)(stop-start)/1000000l)*1000 << " ms " << endl;
 }
 
 LCDisplay::~LCDisplay() {
@@ -119,7 +131,7 @@ LCDisplay::~LCDisplay() {
 void LCDisplay::CmdIn(char cmd,int reg)
 {
 	int busyflag;
-
+	int i;
 	d4_pin->dir(DIR_OUT);
 	d5_pin->dir(DIR_OUT);
 	d6_pin->dir(DIR_OUT);
@@ -127,7 +139,7 @@ void LCDisplay::CmdIn(char cmd,int reg)
 
 	rs_pin->write(reg);
 	rw_pin->write(0);
-	usleep(WAIT_TIME);
+	SHORT_WAIT;
 
 	// write msn
 	d4_pin->write(greaterZeroToInt(cmd & 0x10));
@@ -148,11 +160,11 @@ void LCDisplay::CmdIn(char cmd,int reg)
 	d7_pin->dir(DIR_IN);
 	rs_pin->write(0);
 	rw_pin->write(1);
+
 	busyflag = ToggleEPin();
-
-
 	// read address counter (not used)
 	ToggleEPin();
+
 	while (busyflag > 0)
 	{
 		busyflag = ToggleEPin();
@@ -164,13 +176,14 @@ void LCDisplay::CmdIn(char cmd,int reg)
 int LCDisplay::ToggleEPin()
 {
 	int busyflag;
-	usleep(WAIT_TIME);
-	e_pin->mode(mraa::MODE_STRONG);
+	int i;
+	SHORT_WAIT;
+	//e_pin->mode(mraa::MODE_STRONG);
 	e_pin->write(1);
-	usleep(WAIT_TIME);
+	SHORT_WAIT;
 	busyflag = d7_pin->read();
 	e_pin->write(0);
-	usleep(WAIT_TIME);
+	SHORT_WAIT;
 	return busyflag;
 }
 int LCDisplay::greaterZeroToInt(int nrin)
@@ -184,13 +197,14 @@ int LCDisplay::greaterZeroToInt(int nrin)
 
 void LCDisplay::WriteSingleCmd(int cmd)
 {
+	int i;
 	d4_pin->dir(DIR_OUT);
 	d5_pin->dir(DIR_OUT);
 	d6_pin->dir(DIR_OUT);
 	d7_pin->dir(DIR_OUT);
 	rs_pin->write(0);
 	rw_pin->write(0);
-	usleep(WAIT_TIME);
+	SHORT_WAIT;
 	// write msn
 	d4_pin->write(greaterZeroToInt(cmd & 0x10));
 	d5_pin->write(greaterZeroToInt(cmd & 0x20));

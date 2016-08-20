@@ -11,7 +11,8 @@
 
 #include "gpio.hpp"
 
-#define WAIT_TIME 3
+#define WAIT_TIME 2
+#define SHORT_WAIT for(i=1;i<200;i++){}
 
 using namespace mraa;
 
