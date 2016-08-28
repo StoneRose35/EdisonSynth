@@ -9,12 +9,13 @@
 #define GUI_H_
 #include "LCDisplay.h"
 #include "SeqMidiController.h"
+#include "I2CController.h"
 
 class Gui {
 public:
 	Gui();
 	virtual ~Gui();
-	void init_gui(char * is_running,SeqMidiController * smcIn);
+	void init_gui(char * is_running,SeqMidiController * smcIn,I2CController *i2ccontr);
 	int idDisplayed;
 	int n_clients;
 	int idAttached;
@@ -23,6 +24,7 @@ public:
 	Gpio* buttonOk;
 	char ** midiclients;
 	SeqMidiController * smc;
+	I2CController * i2cc;
 	void displayCurrentMidiClient(char *** clientlist);
 private:
 	static void *static_thread_method(void *arg);

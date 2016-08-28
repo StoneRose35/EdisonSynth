@@ -41,7 +41,7 @@
 
 // specifies if a monitoring thread should be spawned which allows to shut down the synth in a clean manner by
 // entering "q" from the console, useful for debugging, dreadful when edisonsynth is used as a service
-#define USE_MONITORING
+//#define USE_MONITORING
 
 
 #endif /* CONSTANTS_H_ */

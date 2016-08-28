@@ -19,6 +19,8 @@ public:
 	I2CController();
 	void init_i2c(Voice ** ,char * );
 	virtual ~I2CController();
+	void request_pause();
+	void restart();
 
 private:
 	void readerfunction();
@@ -26,6 +28,8 @@ private:
 	Voice ** voices_i2cc;
 	pthread_t i2c_controller_thread;
 	char * should_be_running;
+	bool is_active;
+	bool pause_requested;
 	mraa::I2c* i2cc;
 };
 

@@ -175,7 +175,7 @@ void EdisonSynthesizer::init_i2c()
 void EdisonSynthesizer::init_gui()
 {
 	guicontroller=new Gui();
-	guicontroller->init_gui(engine_running,smc);
+	guicontroller->init_gui(engine_running,smc,i2ccontroller);
 }
 /**
  * the callback function doing the sample calculation, basically mixes all active voices sound output together

@@ -34,7 +34,7 @@ Gui::Gui() {
 
 }
 
-void Gui::init_gui(char * is_running,SeqMidiController * smcIn)
+void Gui::init_gui(char * is_running,SeqMidiController * smcIn,I2CController * i2ccontr)
 {
 	int status;
 	string dstring;
@@ -52,6 +52,8 @@ void Gui::init_gui(char * is_running,SeqMidiController * smcIn)
 		}
 	}
 	smc=smcIn;
+	i2cc=i2ccontr;
+
 	buttonUp = new Gpio(3);
 	buttonUp->dir(mraa::DIR_IN);
 	buttonUp->mode(mraa::MODE_PULLUP);
@@ -69,6 +71,10 @@ void Gui::init_gui(char * is_running,SeqMidiController * smcIn)
 	idDisplayed=0;
 	idAttached=0;
 
+	smc->getAllMidiClients(&midiclients);
+	smc->reattach_midi_client(midiclients[0]);
+	displayCurrentMidiClient(&midiclients);
+	//sleep(2);
 
 	status=pthread_create(&gui_thread,NULL,Gui::static_thread_method,this);
 	if(status ==-1)
@@ -83,7 +89,7 @@ void Gui::init_gui(char * is_running,SeqMidiController * smcIn)
 	buttonOk->isr(EDGE_FALLING,buttonOkHandler,this);
 
 
-	//smc->getAllMidiClients(&midiclients);
+
 	//displayCurrentMidiClient(&midiclients);
 
 }
@@ -111,6 +117,7 @@ Gui::~Gui() {
 void Gui::displayCurrentMidiClient(char *** clientlist)
 {
 	string dstring;
+	i2cc->request_pause();
 	dstring=string("Midi Client ") + to_string(idDisplayed) + ":\n" + string((*clientlist)[idDisplayed]);
 	if(idDisplayed==idAttached)
 	{
@@ -118,7 +125,7 @@ void Gui::displayCurrentMidiClient(char *** clientlist)
 	}
 	char * strptr=(char*)dstring.c_str();
 	display->writeString(strptr);
-
+	i2cc->restart();
 }
 
 static void buttonUpHandler(void* args)
