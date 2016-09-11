@@ -22,10 +22,6 @@ jmp reset
 .org TWIaddr
 jmp TWIInterrupt 
 
-.org OVF0addr
-jmp Counter0Interrupt
-
-
 // starting point of the application
  .org 0x038
  reset:
@@ -65,7 +61,6 @@ jmp Counter0Interrupt
 
  ldi r16,(1<<ADEN)|(0<<ADSC)|(1<<ADPS1)|(1<<ADPS0)
  out ADCSRA,r16
-
 
 
  // set portd to out
@@ -183,6 +178,8 @@ setAupdating:
  in r16,SREG
  push r16 
 
+
+
  // check status register
  in r16,TWSR
  andi r16,0xF8
@@ -190,8 +187,25 @@ setAupdating:
  cpi r16,0xA8 // address+r has been received, start transmission 
  brne checkDataByteTransmitted
 
-
+ //---------------------------------------------------------------
  //  address plus read has been received, start sending first byte
+
+   // toggle error pin
+ in r16,PORTD
+ sbrc r16,6
+ rjmp led_toggleoff
+ ori r16,0b01000000
+ out portd,r16
+ rjmp ledtoggle_end
+ led_toggleoff:
+ andi r16,0b10111111
+ out portd,r16
+ ledtoggle_end:
+
+ 
+ // set control register for sendValues
+ ldi r18,(1<<TWINT)|(1<<TWEA)|(1<<TWEN)|(1<<TWIE)
+
  
  // loading 0 into TWI counter
  ldi r19,0x00
@@ -211,9 +225,7 @@ setAupdating:
  adc XH,r16
  ld r17,X
  out TWDR,r17 // put value from memory to twi data register
- in r16,TWSR
- ori r16,(1 << TWIE)|(1<<TWEA)
- out TWSR,r16
+ out TWCR,r18
  rjmp   sendValues_incCounter
 
  // send bank A
@@ -225,9 +237,7 @@ setAupdating:
  adc XH,r16
  ld r17,X
  out TWDR,r17 // put value from memory to twi data register
- in r16,TWSR
- ori r16,(1 << TWIE)|(1<<TWEA)
- out TWSR,r16
+ out TWCR,r18
 //rjmp  sendValues_incCounter
 
  sendValues_incCounter:
@@ -238,25 +248,42 @@ setAupdating:
  // check for case "$B8", data byte transmitted and ACK received
  checkDataByteTransmitted:
  cpi r16,0xB8
- brne errorcase
+ brne checkLastByte
+ //brne returnFromTwiInt
 
+//----------------------------------------------------------
 // data has been transmitted and ACK has been received
+ldi r18,(1<<TWINT)|(1<<TWEA)|(1<<TWEN)|(1<<TWIE)
 lds r19,twiCounter
-cpi r19,N_CHANNELS
-brne sendValues // send values if last hasn't been sent yet
-ldi r19,0x00
-rcall switchOnDebugLed
-sts twiCounter,r19
+cpi r19,N_CHANNELS-1
+brlo sendValues
+// send last value
+ldi r18,(1<<TWINT)|(0<<TWEA)|(1<<TWEN)|(1<<TWIE)
+rjmp sendValues
+
+//---------------------------------------------------------дь
+// data has been transmitted and NACK has been received
+checkLastByte:
+cpi r16,0xC0
+brne errorcase
+ldi r18,(1<<TWINT)|(1<<TWEA)|(1<<TWEN)|(1<<TWIE)
+lds r19,twiCounter
+cpi r19,N_CHANNELS-1
+brlo sendValues // send values even though the master indicated that no more bytes should be end
+
+// reenable the twi interface to listen the it's address
+ldi r18,(1<<TWINT)|(1<<TWEA)|(1<<TWEN)|(1<<TWIE)
+out TWCR,r18
 rjmp returnFromTwiInt
 
+
 errorcase:
-rcall switchOnDebugLed
+
+ldi r18,(1<<TWINT)|(1<<TWEA)|(1<<TWEN)|(1<<TWIE)
+out TWCR,r18
+
 
  returnFromTwiInt:
- // clear interrupt flag
- in r16,TWCR
- ori r16,(1<<TWINT)
- out TWCR,r16
 
 
  pop r16
@@ -264,39 +291,6 @@ rcall switchOnDebugLed
  pop r19
  pop r18
  pop r17
- pop r16
- reti
-
-
- switchOnDebugLed:
- push r16
- in r16,PORTD
- ori r16,0b01000000
- out PORTD,r16
- ldi r16,0x05
- out TCCR0,r16
- in r16,TIMSK
- ori r16,(1<<TOIE0)
- out TIMSK,r16
-
- pop r16
- ret
-
- // switches off the debug led
- Counter0Interrupt:
- push r16
- in r16,SREG
- push r16
-
-
- in r16,PORTD
- andi r16,0b10111111
- out PORTD,r16
- ldi r16,0x00
- out TCCR0,r16 // stop the clock
-
- pop r16
- out SREG,r16
  pop r16
  reti
 
@@ -314,3 +308,4 @@ rcall switchOnDebugLed
  .byte 1
  twiCounter:
  .byte 1
+ 
